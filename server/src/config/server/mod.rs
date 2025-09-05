@@ -394,7 +394,7 @@ mod tests {
         let config = cm.get_config("public", "test").await.unwrap();
         println!("config: {:?}", config);
 
-        let mut entry = ConfigEntry {
+        let entry = ConfigEntry {
             id_: 1,
             namespace_id: "public".to_string(),
             id: "test".to_string(),
@@ -404,7 +404,7 @@ mod tests {
             description: None,
             md5: "".to_string(),
         };
-        cm.insert_config(entry).await.unwrap();
+        cm.insert_config(entry.clone()).await.unwrap();
 
         let config = cm.get_config("public", "test").await.unwrap();
         println!("config: {:?}", config);

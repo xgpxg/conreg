@@ -34,7 +34,7 @@ pub async fn init(req: Json<Vec<(NodeId, String)>>) -> Result<String, Status> {
         }
     };
     match app.raft.initialize(nodes).await {
-        Ok(response) => Ok("Cluster initialization completed".to_string()),
+        Ok(_) => Ok("Cluster initialization completed".to_string()),
         Err(e) => {
             log::error!("{}", e);
             Err(Status::InternalServerError)
