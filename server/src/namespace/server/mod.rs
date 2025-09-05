@@ -1,22 +1,27 @@
 pub mod api;
 
 use crate::Args;
-use crate::config::server::{ConfigApp, ConfigManager};
 use crate::raft::RaftRequest;
 use chrono::{DateTime, Local};
-use logging::log;
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
 use sqlx::sqlite::SqlitePoolOptions;
-use std::process::exit;
 use std::time::Duration;
+use tracing::log;
 
+/// 命名空间
 #[derive(sqlx::FromRow, Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Namespace {
+    /// 命名空间ID，默认为16位随机字符
     pub id: String,
+    /// 命名空间名称
     pub name: String,
+    /// 命名空间描述
     pub description: Option<String>,
-    pub ts: DateTime<Local>,
+    /// 创建时间
+    pub create_time: DateTime<Local>,
+    /// 更新时间
+    pub update_time: DateTime<Local>,
 }
 
 #[derive(Debug)]
@@ -76,7 +81,8 @@ impl NamespaceManager {
             id: id.to_string(),
             name: name.to_string(),
             description: description.clone(),
-            ts: Local::now(),
+            create_time: Local::now(),
+            update_time: Local::now(),
         };
         // 同步数据
         self.sync(RaftRequest::UpsertNamespace { namespace })
@@ -97,22 +103,23 @@ impl NamespaceManager {
         Ok(())
     }
     async fn insert_namespace(&self, namespace: &Namespace) -> anyhow::Result<()> {
-        sqlx::query("insert into namespace (id, name, description, ts) values (?, ?, ?, ?)")
+        sqlx::query("insert into namespace (id, name, description, create_time, update_time) values (?, ?, ?, ?, ?)")
             .bind(&namespace.id)
             .bind(&namespace.name)
             .bind(&namespace.description)
-            .bind(namespace.ts)
+            .bind(namespace.create_time)
+            .bind(namespace.update_time)
             .execute(&self.pool)
             .await?;
         Ok(())
     }
 
     async fn update_namespace(&self, namespace: &Namespace) -> anyhow::Result<()> {
-        sqlx::query("update namespace set name = ?, description = ?, ts = ? where id = ?")
+        sqlx::query("update namespace set name = ?, description = ?, update_time = ? where id = ?")
             .bind(&namespace.name)
             .bind(&namespace.description)
             .bind(&namespace.id)
-            .bind(namespace.ts)
+            .bind(namespace.update_time)
             .execute(&self.pool)
             .await?;
         Ok(())
@@ -138,18 +145,13 @@ impl NamespaceManager {
     }
 
     async fn sync(&self, request: RaftRequest) -> anyhow::Result<()> {
-        log::info!("sync config request: {:?}", request);
+        log::info!("sync namespace request: {:?}", request);
         self.http_client
             .post(format!("http://127.0.0.1:{}/write", self.args.port))
             .json(&request)
             .send()
             .await?;
-        log::info!("sync config success");
+        log::info!("sync namespace success");
         Ok(())
     }
-}
-
-#[derive(Debug)]
-pub struct NamespaceApp {
-    pub manager: NamespaceManager,
 }

@@ -13,32 +13,19 @@ pub mod store;
 #[serde(tag = "cmd", content = "data")]
 pub enum RaftRequest {
     /// 设置键值对
-    Set {
-        key: String,
-        value: String,
-    },
+    Set { key: String, value: String },
     /// 删除键值对
-    Delete {
-        key: String,
-    },
+    Delete { key: String },
     /// 配置中心设置配置
-    SetConfig {
-        entry: ConfigEntry,
-    },
-    UpdateConfig {
-        entry: ConfigEntry,
-    },
+    SetConfig { entry: ConfigEntry },
+    /// 配置中心更新配置
+    UpdateConfig { entry: ConfigEntry },
     /// 配置中心删除配置
-    DeleteConfig {
-        namespace_id: String,
-        id: String,
-    },
-    UpsertNamespace {
-        namespace: Namespace,
-    },
-    DeleteNamespace {
-        id: String,
-    },
+    DeleteConfig { namespace_id: String, id: String },
+    /// 新增或更新命名空间
+    UpsertNamespace { namespace: Namespace },
+    /// 删除命名空间
+    DeleteNamespace { id: String },
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct RaftResponse {
@@ -60,5 +47,5 @@ pub type StateMachine = store::StateMachineStore;
 // 4. 实现网络层
 pub type Network = network::NetworkFactory;
 
-/// 节点ID
+// 节点ID
 pub type NodeId = u64;

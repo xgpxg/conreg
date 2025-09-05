@@ -21,14 +21,24 @@
 //!     // 获取配置
 //!     println!("{:?}", AppConfig::get::<String>("name"));
 //!     println!("{:?}", AppConfig::get::<u32>("age"));
+//!
+//!     // 绑定配置内容到一个struct
+//!     #[derive(Deserialize)]
+//!     struct MyConfig {
+//!         name: String,
+//!     }
+//!     let my_config = AppConfig::bind::<MyConfig>().unwrap();
+//!     println!("my config, name: {:?}", my_config.name);
 //!  }
 //!
 //! ```
 //!
 
 use crate::config::Configs;
+use anyhow::bail;
 use env_logger::WriteStyle;
 use serde::Deserialize;
+use serde::de::DeserializeOwned;
 use std::path::PathBuf;
 use std::process::exit;
 use std::sync::{Arc, OnceLock, RwLock};
@@ -167,17 +177,28 @@ pub async fn init_with(config: ConRegConfig) {
 
 pub struct AppConfig;
 impl AppConfig {
+    fn reload(configs: Configs) {
+        match CONFIGS.get() {
+            None => {
+                log::error!("config not init");
+            }
+            Some(config) => {
+                *config.write().unwrap() = configs;
+            }
+        }
+    }
+
     /// 获取配置值
     ///
     /// 注意：获取的值类型需要与配置中的值类型保持一致，如果不一致，可能会导致转换失败，
     /// 转换失败时将返回`None`
-    pub fn get<V: serde::de::DeserializeOwned>(key: &str) -> Option<V> {
+    pub fn get<V: DeserializeOwned>(key: &str) -> Option<V> {
         match CONFIGS.get() {
             None => {
                 log::error!("config not init");
                 None
             }
-            Some(config) => match config.read().unwrap().get(key) {
+            Some(config) => match config.read().expect("read lock error").get(key) {
                 None => None,
                 Some(value) => match serde_yaml::from_value::<V>(value.clone()) {
                     Ok(value) => Some(value),
@@ -190,13 +211,16 @@ impl AppConfig {
         }
     }
 
-    fn reload(configs: Configs) {
+    pub fn bind<T: DeserializeOwned>() -> anyhow::Result<T> {
         match CONFIGS.get() {
             None => {
-                log::error!("config not init");
+                bail!("config not init");
             }
             Some(config) => {
-                *config.write().unwrap() = configs;
+                let value: T = serde_yaml::from_value(
+                    config.read().expect("read lock error").content.clone(),
+                )?;
+                Ok(value)
             }
         }
     }
@@ -238,8 +262,15 @@ mod tests {
             },
         })
         .await;
-        println!("{:?}", AppConfig::get::<Vec<String>>("name"));
+        println!("{:?}", AppConfig::get::<String>("name"));
         println!("{:?}", AppConfig::get::<u32>("age"));
+
+        #[derive(Deserialize)]
+        struct MyConfig {
+            name: String,
+        }
+        let my_config = AppConfig::bind::<MyConfig>().unwrap();
+        println!("my config, name: {:?}", my_config.name);
 
         tokio::spawn(async move {
             loop {

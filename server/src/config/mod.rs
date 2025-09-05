@@ -1,16 +1,20 @@
 pub mod server;
 
 use crate::Args;
-use logging::log;
 use std::process::exit;
+use tracing::log;
 
-use crate::config::server::{ConfigApp, ConfigManager};
+use crate::config::server::ConfigManager;
+
+#[derive(Debug)]
+pub struct ConfigApp {
+    pub manager: ConfigManager,
+}
 
 pub async fn new_config_app(args: &Args) -> ConfigApp {
-
     let manager = ConfigManager::new(args).await;
     if let Err(e) = manager {
-        log::error!("Failed to create config app: {}", e);
+        log::error!("create config app error: {}", e);
         exit(1);
     }
     ConfigApp {

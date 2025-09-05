@@ -189,6 +189,7 @@ impl ConfigClient {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Configs {
     pub configs: HashMap<String, Value>,
+    pub content: Value,
 }
 
 impl Configs {
@@ -208,7 +209,10 @@ impl Configs {
         let mut configs = HashMap::new();
         Self::flatten_yaml_value(&mut configs, "", &merged_config);
 
-        Ok(Configs { configs })
+        Ok(Configs {
+            configs,
+            content: merged_config,
+        })
     }
 
     /// 递归合并两个 YAML 值

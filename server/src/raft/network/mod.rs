@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use logging::log;
+use tracing::log;
 use openraft::BasicNode;
 use openraft::RaftTypeConfig;
 use openraft::error::InstallSnapshotError;

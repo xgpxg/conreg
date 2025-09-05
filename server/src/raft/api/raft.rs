@@ -1,7 +1,7 @@
 use crate::app::get_app;
 use crate::raft::declare_types::VoteRequest;
 use crate::raft::{NodeId, TypeConfig};
-use logging::log;
+use tracing::log;
 use openraft::error::RaftError;
 use openraft::raft::InstallSnapshotResponse;
 use openraft::raft::VoteResponse;

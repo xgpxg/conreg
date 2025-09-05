@@ -5,7 +5,7 @@ use crate::raft::declare_types::{
     Entry, EntryPayload, LogId, SnapshotData, SnapshotMeta, StorageError, StoredMembership,
 };
 use crate::raft::{NodeId, RaftRequest, RaftResponse, TypeConfig};
-use logging::log;
+use tracing::log;
 use openraft::storage::RaftStateMachine;
 use openraft::storage::Snapshot;
 use openraft::{AnyError, RaftSnapshotBuilder, RaftTypeConfig, StorageIOError};

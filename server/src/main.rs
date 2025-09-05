@@ -11,12 +11,12 @@ use std::path::Path;
 use std::str::FromStr;
 
 mod app;
-mod protocol;
 mod config;
+mod discovery;
 mod event;
 mod namespace;
+mod protocol;
 mod raft;
-mod discovery;
 
 #[derive(Parser, Debug, Clone)]
 #[command(version, about, long_about = None)]
@@ -40,13 +40,13 @@ async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
     // 初始化日志
-    logging::init_log();
+    init_log();
 
     // 初始化目录
     init_dir(&args)?;
 
     // 初始化ID生成器
-    common::id::init();
+    protocol::id::init();
 
     // 初始化app
     app::init().await?;
@@ -66,6 +66,7 @@ async fn start_http_server(args: &Args) -> anyhow::Result<()> {
             .limit("json", ByteUnit::Mebibyte(5))
             .limit("data-form", ByteUnit::Mebibyte(100))
             .limit("file", ByteUnit::Mebibyte(100)),
+        cli_colors: false,
         ..Config::debug_default()
     });
 
@@ -99,4 +100,21 @@ fn init_dir(args: &Args) -> anyhow::Result<()> {
     }
 
     Ok(())
+}
+
+fn init_log() {
+    tracing_subscriber::fmt()
+        .with_writer(std::io::stderr)
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| "info,rocket=warn,rocket::response::debug=error".into()),
+        )
+        .with_level(true)
+        .with_ansi(true)
+        .with_line_number(true)
+        .with_timer(tracing_subscriber::fmt::time::ChronoLocal::new(
+            "%Y-%m-%d %H:%M:%S.%.3f".to_string(),
+        ))
+        .compact() // 避免乱码问题
+        .init();
 }

@@ -1,14 +1,14 @@
 use crate::Args;
+use crate::protocol::id;
 use crate::raft::RaftRequest;
 use anyhow::bail;
 use chrono::{DateTime, Local};
-use common::id;
-use logging::log;
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
 use sqlx::sqlite::SqlitePoolOptions;
 use std::fmt::Debug;
 use std::time::Duration;
+use tracing::log;
 
 pub mod api;
 
@@ -22,8 +22,10 @@ pub struct ConfigEntry {
     pub id: String,
     /// 配置内容
     pub content: String,
-    /// 时间戳
-    pub ts: DateTime<Local>,
+    /// 创建时间
+    pub create_time: DateTime<Local>,
+    /// 更新时间
+    pub update_time: DateTime<Local>,
     /// 描述
     pub description: Option<String>,
     /// md5
@@ -31,21 +33,23 @@ pub struct ConfigEntry {
 }
 
 impl ConfigEntry {
+    /// 计算配置内容的MD5
     pub fn gen_md5(content: &str) -> String {
         let digest = md5::compute(content);
         format!("{:x}", digest)
     }
 }
+
 /// 配置管理
 #[derive(Debug)]
 pub struct ConfigManager {
+    /// 启动参数
+    args: Args,
     /// 本地sqlite数据库，用于维护配置内容存储。
     /// 通过raft保证一致性
     pool: SqlitePool,
     /// Http客户端，主要用于同步log到集群
     http_client: reqwest::Client,
-    /// 启动参数
-    args: Args,
     /// 配置变化通知
     sender: tokio::sync::broadcast::Sender<String>,
 }
@@ -56,11 +60,12 @@ impl ConfigManager {
         log::info!("db url: {}", db_url);
 
         let pool = SqlitePoolOptions::new()
-            .max_connections(5)
+            .max_connections(64)
             .connect(db_url)
             .await?;
         Self::init(&pool).await?;
-        let network = reqwest::ClientBuilder::new()
+
+        let http_client = reqwest::ClientBuilder::new()
             .connect_timeout(Duration::from_secs(3))
             .read_timeout(Duration::from_secs(60))
             .build()?;
@@ -68,7 +73,7 @@ impl ConfigManager {
         let (sender, _) = tokio::sync::broadcast::channel(1024);
         Ok(Self {
             pool,
-            http_client: network,
+            http_client,
             args: args.clone(),
             sender,
         })
@@ -125,7 +130,8 @@ impl ConfigManager {
                     namespace_id: namespace_id.to_string(),
                     id: config_id.to_string(),
                     content: content.to_string(),
-                    ts: Local::now(),
+                    create_time: Local::now(),
+                    update_time: Local::now(),
                     description,
                     md5,
                 };
@@ -138,7 +144,8 @@ impl ConfigManager {
                     namespace_id: namespace_id.to_string(),
                     id: config_id.to_string(),
                     content: content.to_string(),
-                    ts: Local::now(),
+                    create_time: old.create_time,
+                    update_time: Local::now(),
                     description,
                     md5,
                 };
@@ -157,14 +164,15 @@ impl ConfigManager {
     /// 注意：该方法不应该直接调用，而需要由raft apply log时调用，以保证数据一致性
     pub async fn insert_config(&self, entry: ConfigEntry) -> anyhow::Result<()> {
         sqlx::query(
-            "INSERT INTO config (id_, namespace_id, id, content, description, ts, md5) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO config (id_, namespace_id, id, content, description, create_time, update_time, md5) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         )
             .bind(&entry.id_)
             .bind(&entry.namespace_id)
             .bind(&entry.id)
             .bind(&entry.content)
             .bind(&entry.description)
-            .bind(&entry.ts)
+            .bind(&entry.create_time)
+            .bind(&entry.update_time)
             .bind(&entry.md5)
             .execute(&self.pool)
             .await?;
@@ -180,11 +188,11 @@ impl ConfigManager {
     /// 注意：该方法不应该直接调用，而需要由raft apply log时调用，以保证数据一致性
     pub async fn update_config(&self, entry: ConfigEntry) -> anyhow::Result<()> {
         sqlx::query(
-            "UPDATE config SET content = ?, description = ?, ts = ?, md5 = ? WHERE id_ = ?",
+            "UPDATE config SET content = ?, description = ?, update_time = ?, md5 = ? WHERE id_ = ?",
         )
         .bind(&entry.content)
         .bind(&entry.description)
-        .bind(&entry.ts)
+        .bind(&entry.update_time)
         .bind(&entry.md5)
         .bind(&entry.id_)
         .execute(&self.pool)
@@ -247,15 +255,16 @@ impl ConfigManager {
         log::info!("append history: {:?}", entry);
         // 保存历史
         sqlx::query(
-            "INSERT INTO config_history (id_, namespace_id, id, content, description, ts, md5) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO config_history (id_, namespace_id, id, content, description, create_time, update_time, md5) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         )
         // 注意这个ID，不能自增或随机生成，需要从entry中计算而来，以保证多节点下的数据的一致性
-        .bind(&entry.id_ + entry.ts.timestamp_millis())
+        .bind(&entry.id_ + entry.update_time.timestamp_millis())
         .bind(&entry.namespace_id)
         .bind(&entry.id)
         .bind(&entry.content)
         .bind(&entry.description)
-        .bind(&entry.ts)
+        .bind(&entry.create_time)
+        .bind(&entry.update_time)
         .bind(&entry.md5)
         .execute(&self.pool)
         .await?;
@@ -370,11 +379,6 @@ impl ConfigManager {
     }
 }
 
-#[derive(Debug)]
-pub struct ConfigApp {
-    pub manager: ConfigManager,
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -395,8 +399,9 @@ mod tests {
             namespace_id: "public".to_string(),
             id: "test".to_string(),
             content: "name: 0".to_string(),
+            create_time: Local::now(),
+            update_time: Local::now(),
             description: None,
-            ts: Local::now(),
             md5: "".to_string(),
         };
         cm.insert_config(entry).await.unwrap();

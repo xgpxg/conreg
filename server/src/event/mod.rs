@@ -1,8 +1,8 @@
 use crate::app::get_app;
 use crate::raft::RaftRequest;
-use logging::log;
 use std::sync::LazyLock;
 use tokio::sync::mpsc;
+use tracing::log;
 
 pub enum Event {
     RaftRequestEvent(RaftRequest),
@@ -23,7 +23,6 @@ impl EventBus {
         let (sender, receiver) = mpsc::unbounded_channel::<Event>();
         let handler = EventHandler::new(receiver);
 
-        // 启动事件处理任务
         tokio::spawn(async move {
             handler.handle_events().await;
         });
@@ -56,7 +55,6 @@ impl EventHandler {
     async fn process_event(&self, event: Event) {
         match event {
             Event::RaftRequestEvent(req) => {
-                // 处理 Raft 请求事件
                 self.handle_raft_request(req).await;
             }
         }

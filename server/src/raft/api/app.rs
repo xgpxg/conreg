@@ -2,7 +2,7 @@ use crate::app::get_app;
 use crate::raft::RaftRequest;
 use crate::raft::api::{ForwardRequest, forward_request_to_leader};
 use crate::raft::declare_types::ClientWriteResponse;
-use logging::log;
+use tracing::log;
 use openraft::error::{ClientWriteError, RaftError};
 use rocket::http::Status;
 use rocket::post;

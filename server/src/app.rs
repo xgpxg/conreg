@@ -1,16 +1,16 @@
-use crate::config::server::ConfigApp;
-use crate::namespace::server::NamespaceApp;
 use crate::raft::store::StateMachineData;
 use crate::raft::{LogStore, Network, NodeId, Raft, StateMachine};
 use crate::{Args, config, namespace, raft};
 use anyhow::Context;
 use clap::Parser;
-use logging::log;
+use tracing::log;
 use openraft::Config;
 use rocket::futures::executor::block_on;
 use std::collections::HashMap;
 use std::sync::{Arc, OnceLock};
 use tokio::sync::RwLock;
+use crate::config::ConfigApp;
+use crate::namespace::NamespaceApp;
 
 pub struct App {
     /// 节点ID

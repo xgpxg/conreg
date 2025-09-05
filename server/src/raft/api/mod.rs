@@ -1,6 +1,6 @@
 use crate::raft::declare_types::ClientWriteResponse;
 use crate::raft::{NodeId, RaftRequest};
-use logging::log;
+use tracing::log;
 use rocket::http::Status;
 use rocket::serde::json::Json;
 use serde::{Deserialize, Serialize};

@@ -2,7 +2,6 @@ use crate::app::get_app;
 use crate::raft::api::{ForwardRequest, forward_request_to_leader};
 use crate::raft::declare_types::{Node, RaftMetrics};
 use crate::raft::{NodeId, TypeConfig};
-use logging::log;
 use openraft::error::{ClientWriteError, RaftError};
 use openraft::raft::ClientWriteResponse;
 use rocket::http::Status;
@@ -10,6 +9,7 @@ use rocket::serde::json::Json;
 use rocket::{get, post};
 use std::collections::BTreeMap;
 use std::collections::BTreeSet;
+use tracing::log;
 
 /// 初始化集群
 ///
@@ -18,7 +18,7 @@ use std::collections::BTreeSet;
 ///
 /// 示例：`curl -X POST http://127.0.0.1:8000/init -d []`
 #[post("/init", data = "<req>")]
-pub async fn init(req: Json<Vec<(NodeId, String)>>) -> Result<Json<()>, Status> {
+pub async fn init(req: Json<Vec<(NodeId, String)>>) -> Result<String, Status> {
     let mut nodes = BTreeMap::new();
     let app = get_app();
     if req.0.is_empty() {
@@ -34,7 +34,7 @@ pub async fn init(req: Json<Vec<(NodeId, String)>>) -> Result<Json<()>, Status> 
         }
     };
     match app.raft.initialize(nodes).await {
-        Ok(response) => Ok(Json(response)),
+        Ok(response) => Ok("Cluster initialization completed".to_string()),
         Err(e) => {
             log::error!("{}", e);
             Err(Status::InternalServerError)

@@ -1,7 +1,7 @@
 use crate::app::get_app;
 use crate::config::server::ConfigEntry;
 use crate::protocol::res::{PageRes, Res};
-use logging::log;
+use tracing::log;
 use rocket::serde::json::Json;
 use serde::{Deserialize, Serialize};
 
@@ -9,6 +9,7 @@ pub fn routes() -> Vec<rocket::Route> {
     routes![upsert, get, delete, recover, list, list_history, watch]
 }
 
+/// 创建或更新配置
 #[derive(Debug, Serialize, Deserialize)]
 struct UpsertConfigReq {
     namespace_id: String,
@@ -16,11 +17,15 @@ struct UpsertConfigReq {
     content: String,
     description: Option<String>,
 }
+
+/// 删除配置
 #[derive(Debug, Serialize, Deserialize)]
 struct DeleteConfigReq {
     namespace_id: String,
     id: String,
 }
+
+/// 恢复配置
 #[derive(Debug, Serialize, Deserialize)]
 struct RecoverConfigReq {
     id_: i64,
