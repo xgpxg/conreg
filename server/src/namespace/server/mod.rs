@@ -64,7 +64,7 @@ impl NamespaceManager {
     }
 
     pub async fn get_namespace(&self, id: &str) -> anyhow::Result<Option<Namespace>> {
-        let namespace = sqlx::query_as("select * from namespace where name = ?")
+        let namespace = sqlx::query_as("select * from namespace where id = ?")
             .bind(id)
             .fetch_optional(&self.pool)
             .await?;
@@ -118,8 +118,8 @@ impl NamespaceManager {
         sqlx::query("update namespace set name = ?, description = ?, update_time = ? where id = ?")
             .bind(&namespace.name)
             .bind(&namespace.description)
-            .bind(&namespace.id)
             .bind(namespace.update_time)
+            .bind(&namespace.id)
             .execute(&self.pool)
             .await?;
         Ok(())
@@ -153,5 +153,27 @@ impl NamespaceManager {
             .await?;
         log::info!("sync namespace success");
         Ok(())
+    }
+
+    /// 列表查询（分页）
+    async fn list_namespace_with_page(
+        &self,
+        page_num: i32,
+        page_size: i32,
+    ) -> anyhow::Result<(u64, Vec<Namespace>)> {
+        let total: u64 = sqlx::query_scalar("SELECT COUNT(1) FROM config")
+            .fetch_one(&self.pool)
+            .await?;
+
+        let offset = (page_num - 1) * page_size;
+
+        let rows: Vec<Namespace> =
+            sqlx::query_as("SELECT * FROM namespace ORDER BY create_time DESC LIMIT ?, ?")
+                .bind(offset)
+                .bind(page_size)
+                .fetch_all(&self.pool)
+                .await?;
+
+        Ok((total, rows))
     }
 }

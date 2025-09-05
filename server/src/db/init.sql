@@ -30,3 +30,6 @@ create table if not exists namespace
     create_time timestamp    not null,
     update_time timestamp    not null
 );
+
+insert or ignore into namespace (id, name, description, create_time, update_time)
+values ('public', 'public', '保留空间', current_timestamp, current_timestamp);
