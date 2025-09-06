@@ -31,5 +31,15 @@ create table if not exists namespace
     update_time timestamp    not null
 );
 
+create table if not exists service
+(
+    service_id   varchar(100) not null,
+    namespace_id varchar(100) not null,
+    meta         varchar(5000),
+    create_time  timestamp    not null,
+    update_time  timestamp    not null,
+    primary key (namespace_id, service_id)
+);
+
 insert or ignore into namespace (id, name, description, create_time, update_time)
 values ('public', 'public', '保留空间', current_timestamp, current_timestamp);

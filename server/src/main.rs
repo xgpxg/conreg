@@ -12,6 +12,7 @@ use std::str::FromStr;
 
 mod app;
 mod config;
+mod db;
 mod discovery;
 mod event;
 mod namespace;
@@ -48,6 +49,9 @@ async fn main() -> anyhow::Result<()> {
     // 初始化ID生成器
     protocol::id::init();
 
+    // 初始化数据库
+    db::init(&args).await?;
+
     // 初始化app
     app::init().await?;
 
@@ -73,6 +77,7 @@ async fn start_http_server(args: &Args) -> anyhow::Result<()> {
     builder = builder.mount("/", raft::api::routes());
     builder = builder.mount("/config", config::server::api::routes());
     builder = builder.mount("/namespace", namespace::server::api::routes());
+    builder = builder.mount("/discovery", discovery::server::api::routes());
 
     //builder = builder.manage(App::new(&args).await);
 
@@ -107,7 +112,7 @@ fn init_log() {
         .with_writer(std::io::stderr)
         .with_env_filter(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "info,rocket=warn,rocket::response::debug=error".into()),
+                .unwrap_or_else(|_| "warn,rocket=warn,rocket::response::debug=error".into()),
         )
         .with_level(true)
         .with_ansi(true)

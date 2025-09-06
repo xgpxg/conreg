@@ -116,6 +116,85 @@ impl EventHandler {
                     }
                 };
             }
+            RaftRequest::RegisterService { service } => {
+                match get_app()
+                    .discovery_app
+                    .manager
+                    .register_service(service)
+                    .await
+                {
+                    Ok(_) => {}
+                    Err(e) => {
+                        log::error!("Error processing RegisterService request: {}", e);
+                    }
+                };
+            }
+            RaftRequest::DeregisterService {
+                namespace_id,
+                service_id,
+            } => {
+                match get_app()
+                    .discovery_app
+                    .manager
+                    .deregister_service(&namespace_id, &service_id)
+                    .await
+                {
+                    Ok(_) => {}
+                    Err(e) => {
+                        log::error!("Error processing DeregisterService request: {}", e);
+                    }
+                };
+            }
+            RaftRequest::RegisterServiceInstance {
+                namespace_id,
+                instance,
+            } => {
+                match get_app()
+                    .discovery_app
+                    .manager
+                    .register_service_instance(&namespace_id, instance)
+                    .await
+                {
+                    Ok(_) => {}
+                    Err(e) => {
+                        log::error!("Error processing RegisterServiceInstance request: {}", e);
+                    }
+                };
+            }
+            RaftRequest::DeregisterServiceInstance {
+                namespace_id,
+                service_id,
+                instance_id,
+            } => {
+                match get_app()
+                    .discovery_app
+                    .manager
+                    .deregister_instance(&namespace_id, &service_id, &instance_id)
+                    .await
+                {
+                    Ok(_) => {}
+                    Err(e) => {
+                        log::error!("Error processing DeregisterServiceInstance request: {}", e);
+                    }
+                };
+            }
+            RaftRequest::Heartbeat {
+                namespace_id,
+                service_id,
+                instance_id,
+            } => {
+                match get_app()
+                    .discovery_app
+                    .manager
+                    .heartbeat(&namespace_id, &service_id, &instance_id)
+                    .await
+                {
+                    Ok(_) => {}
+                    Err(e) => {
+                        log::error!("Error processing Heartbeat request: {}", e);
+                    }
+                };
+            }
         }
     }
 }

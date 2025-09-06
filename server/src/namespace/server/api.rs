@@ -21,7 +21,7 @@ struct DeleteConfigReq {
 
 /// 创建或更新命名空间
 #[post("/upsert", data = "<req>")]
-pub async fn upsert(req: Json<UpsertConfigReq>) -> Res<()> {
+async fn upsert(req: Json<UpsertConfigReq>) -> Res<()> {
     match get_app()
         .namespace_app
         .manager
@@ -35,7 +35,7 @@ pub async fn upsert(req: Json<UpsertConfigReq>) -> Res<()> {
 
 /// 删除命名空间
 #[post("/delete", data = "<req>")]
-pub async fn delete(req: Json<DeleteConfigReq>) -> Res<()> {
+async fn delete(req: Json<DeleteConfigReq>) -> Res<()> {
     match get_app()
         .namespace_app
         .manager
@@ -49,7 +49,7 @@ pub async fn delete(req: Json<DeleteConfigReq>) -> Res<()> {
 
 /// 列表查询（分页）
 #[get("/list?<page_num>&<page_size>")]
-pub async fn list(page_num: i32, page_size: i32) -> Res<PageRes<Namespace>> {
+async fn list(page_num: i32, page_size: i32) -> Res<PageRes<Namespace>> {
     match get_app()
         .namespace_app
         .manager

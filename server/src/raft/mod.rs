@@ -1,4 +1,6 @@
 use crate::config::server::ConfigEntry;
+use crate::discovery::ServiceInstance;
+use crate::discovery::server::Service;
 use crate::namespace::server::Namespace;
 use serde::{Deserialize, Serialize};
 use std::io::Cursor;
@@ -26,6 +28,30 @@ pub enum RaftRequest {
     UpsertNamespace { namespace: Namespace },
     /// 删除命名空间
     DeleteNamespace { id: String },
+    /// 注册服务
+    RegisterService { service: Service },
+    /// 注销服务
+    DeregisterService {
+        namespace_id: String,
+        service_id: String,
+    },
+    /// 注册服务实例
+    RegisterServiceInstance {
+        namespace_id: String,
+        instance: ServiceInstance,
+    },
+    /// 注销服务实例
+    DeregisterServiceInstance {
+        namespace_id: String,
+        service_id: String,
+        instance_id: String,
+    },
+    /// 心跳
+    Heartbeat {
+        namespace_id: String,
+        service_id: String,
+        instance_id: String,
+    },
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct RaftResponse {

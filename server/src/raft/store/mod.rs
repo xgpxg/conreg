@@ -5,7 +5,6 @@ use crate::raft::declare_types::{
     Entry, EntryPayload, LogId, SnapshotData, SnapshotMeta, StorageError, StoredMembership,
 };
 use crate::raft::{NodeId, RaftRequest, RaftResponse, TypeConfig};
-use tracing::log;
 use openraft::storage::RaftStateMachine;
 use openraft::storage::Snapshot;
 use openraft::{AnyError, RaftSnapshotBuilder, RaftTypeConfig, StorageIOError};
@@ -20,6 +19,7 @@ use std::ops::Deref;
 use std::path::Path;
 use std::sync::Arc;
 use tokio::sync::RwLock;
+use tracing::log;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct StoredSnapshot {
@@ -102,12 +102,18 @@ impl StateMachineStore {
                 RaftRequest::SetConfig { .. }
                 | RaftRequest::DeleteConfig { .. }
                 | RaftRequest::UpdateConfig { .. }
+                // 考虑拆分一下？
                 | RaftRequest::UpsertNamespace { .. }
-                | RaftRequest::DeleteNamespace { .. } => {
+                | RaftRequest::DeleteNamespace { .. }
+                | RaftRequest::RegisterService { .. }
+                | RaftRequest::DeregisterService { .. }
+                | RaftRequest::RegisterServiceInstance { .. }
+                | RaftRequest::DeregisterServiceInstance { .. }
+                | RaftRequest::Heartbeat { .. }=> {
                     match Event::RaftRequestEvent(req.clone()).send() {
                         Ok(_) => Ok(RaftResponse { value: None }),
                         Err(e) => {
-                            log::error!("Failed to send SetConfig event: {:?}", e);
+                            log::error!("Failed to send RaftRequestEvent: {:?}", e);
                             Err(StorageIOError::write_state_machine(AnyError::new(&e)).into())
                         }
                     }

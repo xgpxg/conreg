@@ -1,11 +1,10 @@
 pub mod api;
 
 use crate::Args;
+use crate::db::DbPool;
 use crate::raft::RaftRequest;
 use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
-use sqlx::SqlitePool;
-use sqlx::sqlite::SqlitePoolOptions;
 use std::time::Duration;
 use tracing::log;
 
@@ -26,9 +25,6 @@ pub struct Namespace {
 
 #[derive(Debug)]
 pub struct NamespaceManager {
-    /// 本地sqlite数据库，用于维护配置内容存储。
-    /// 通过raft保证一致性
-    pool: SqlitePool,
     /// Http客户端，主要用于同步log到集群
     http_client: reqwest::Client,
     /// 启动参数
@@ -37,36 +33,21 @@ pub struct NamespaceManager {
 
 impl NamespaceManager {
     pub async fn new(args: &Args) -> anyhow::Result<Self> {
-        let db_url = &format!("sqlite:{}/{}/{}", args.data_dir, "db", "config.db");
-        log::info!("db url: {}", db_url);
-
-        let pool = SqlitePoolOptions::new()
-            .max_connections(5)
-            .connect(db_url)
-            .await?;
-        Self::init(&pool).await?;
-        let network = reqwest::ClientBuilder::new()
+        let http_client = reqwest::ClientBuilder::new()
             .connect_timeout(Duration::from_secs(3))
             .read_timeout(Duration::from_secs(60))
             .build()?;
 
         Ok(Self {
-            pool,
-            http_client: network,
+            http_client,
             args: args.clone(),
         })
-    }
-    /// 初始化数据库
-    async fn init(pool: &SqlitePool) -> anyhow::Result<()> {
-        let sql = include_str!("../../db/init.sql");
-        sqlx::query(sql).execute(pool).await?;
-        Ok(())
     }
 
     pub async fn get_namespace(&self, id: &str) -> anyhow::Result<Option<Namespace>> {
         let namespace = sqlx::query_as("select * from namespace where id = ?")
             .bind(id)
-            .fetch_optional(&self.pool)
+            .fetch_optional(DbPool::get())
             .await?;
         Ok(namespace)
     }
@@ -109,7 +90,7 @@ impl NamespaceManager {
             .bind(&namespace.description)
             .bind(namespace.create_time)
             .bind(namespace.update_time)
-            .execute(&self.pool)
+            .execute(DbPool::get())
             .await?;
         Ok(())
     }
@@ -120,7 +101,7 @@ impl NamespaceManager {
             .bind(&namespace.description)
             .bind(namespace.update_time)
             .bind(&namespace.id)
-            .execute(&self.pool)
+            .execute(DbPool::get())
             .await?;
         Ok(())
     }
@@ -135,11 +116,11 @@ impl NamespaceManager {
         // 删除配置
         sqlx::query("delete from config where namespace_id = ?")
             .bind(id)
-            .execute(&self.pool)
+            .execute(DbPool::get())
             .await?;
         sqlx::query("delete from namespace where id = ?")
             .bind(id)
-            .execute(&self.pool)
+            .execute(DbPool::get())
             .await?;
         Ok(())
     }
@@ -155,6 +136,18 @@ impl NamespaceManager {
         Ok(())
     }
 
+    #[allow(unused)]
+    pub async fn get_all_namespace(&self) -> anyhow::Result<Vec<Namespace>> {
+        let namespaces = sqlx::query_as(
+            r#"
+            SELECT * FROM namespace
+            "#,
+        )
+        .fetch_all(DbPool::get())
+        .await?;
+        Ok(namespaces)
+    }
+
     /// 列表查询（分页）
     async fn list_namespace_with_page(
         &self,
@@ -162,7 +155,7 @@ impl NamespaceManager {
         page_size: i32,
     ) -> anyhow::Result<(u64, Vec<Namespace>)> {
         let total: u64 = sqlx::query_scalar("SELECT COUNT(1) FROM config")
-            .fetch_one(&self.pool)
+            .fetch_one(DbPool::get())
             .await?;
 
         let offset = (page_num - 1) * page_size;
@@ -171,7 +164,7 @@ impl NamespaceManager {
             sqlx::query_as("SELECT * FROM namespace ORDER BY create_time DESC LIMIT ?, ?")
                 .bind(offset)
                 .bind(page_size)
-                .fetch_all(&self.pool)
+                .fetch_all(DbPool::get())
                 .await?;
 
         Ok((total, rows))

@@ -1,16 +1,17 @@
+use crate::config::ConfigApp;
+use crate::discovery::DiscoveryApp;
+use crate::namespace::NamespaceApp;
 use crate::raft::store::StateMachineData;
 use crate::raft::{LogStore, Network, NodeId, Raft, StateMachine};
-use crate::{Args, config, namespace, raft};
+use crate::{Args, config, discovery, namespace, raft};
 use anyhow::Context;
 use clap::Parser;
-use tracing::log;
 use openraft::Config;
 use rocket::futures::executor::block_on;
 use std::collections::HashMap;
 use std::sync::{Arc, OnceLock};
 use tokio::sync::RwLock;
-use crate::config::ConfigApp;
-use crate::namespace::NamespaceApp;
+use tracing::log;
 
 pub struct App {
     /// 节点ID
@@ -29,6 +30,8 @@ pub struct App {
     pub config_app: ConfigApp,
     /// 命名空间
     pub namespace_app: NamespaceApp,
+    /// 服务发现
+    pub discovery_app: DiscoveryApp,
 }
 
 impl App {
@@ -73,6 +76,9 @@ impl App {
         // 命名空间实例
         let namespace_app = namespace::new_namespace_app(&args).await;
 
+        // 服务发现实例
+        let discovery_app = discovery::new_discovery_app(&args).await;
+
         App {
             id: args.node_id,
             addr,
@@ -81,6 +87,7 @@ impl App {
             other: Arc::new(Default::default()),
             config_app,
             namespace_app,
+            discovery_app,
         }
     }
 }

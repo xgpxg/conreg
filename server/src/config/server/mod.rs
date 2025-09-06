@@ -1,11 +1,10 @@
 use crate::Args;
+use crate::db::DbPool;
 use crate::protocol::id;
 use crate::raft::RaftRequest;
 use anyhow::bail;
 use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
-use sqlx::SqlitePool;
-use sqlx::sqlite::SqlitePoolOptions;
 use std::fmt::Debug;
 use std::time::Duration;
 use tracing::log;
@@ -45,9 +44,6 @@ impl ConfigEntry {
 pub struct ConfigManager {
     /// 启动参数
     args: Args,
-    /// 本地sqlite数据库，用于维护配置内容存储。
-    /// 通过raft保证一致性
-    pool: SqlitePool,
     /// Http客户端，主要用于同步log到集群
     http_client: reqwest::Client,
     /// 配置变化通知
@@ -56,15 +52,6 @@ pub struct ConfigManager {
 
 impl ConfigManager {
     pub async fn new(args: &Args) -> anyhow::Result<Self> {
-        let db_url = &format!("sqlite:{}/{}/{}", args.data_dir, "db", "config.db");
-        log::info!("db url: {}", db_url);
-
-        let pool = SqlitePoolOptions::new()
-            .max_connections(64)
-            .connect(db_url)
-            .await?;
-        Self::init(&pool).await?;
-
         let http_client = reqwest::ClientBuilder::new()
             .connect_timeout(Duration::from_secs(3))
             .read_timeout(Duration::from_secs(60))
@@ -72,18 +59,10 @@ impl ConfigManager {
 
         let (sender, _) = tokio::sync::broadcast::channel(1024);
         Ok(Self {
-            pool,
             http_client,
             args: args.clone(),
             sender,
         })
-    }
-
-    /// 初始化数据库
-    async fn init(pool: &SqlitePool) -> anyhow::Result<()> {
-        let sql = include_str!("../../db/init.sql");
-        sqlx::query(sql).execute(pool).await?;
-        Ok(())
     }
 
     fn notify_config_change(&self, namespace_id: String) {
@@ -100,7 +79,7 @@ impl ConfigManager {
             sqlx::query_as("SELECT * FROM config WHERE namespace_id = ? AND id = ?")
                 .bind(namespace_id)
                 .bind(config_id)
-                .fetch_optional(&self.pool)
+                .fetch_optional(DbPool::get())
                 .await?;
         Ok(config)
     }
@@ -174,7 +153,7 @@ impl ConfigManager {
             .bind(&entry.create_time)
             .bind(&entry.update_time)
             .bind(&entry.md5)
-            .execute(&self.pool)
+            .execute(DbPool::get())
             .await?;
 
         // 添加历史记录
@@ -195,7 +174,7 @@ impl ConfigManager {
         .bind(&entry.update_time)
         .bind(&entry.md5)
         .bind(&entry.id_)
-        .execute(&self.pool)
+        .execute(DbPool::get())
         .await?;
 
         // 添加历史记录
@@ -225,7 +204,7 @@ impl ConfigManager {
         sqlx::query("DELETE FROM config WHERE namespace_id = ? AND id = ?")
             .bind(namespace_id)
             .bind(config_id)
-            .execute(&self.pool)
+            .execute(DbPool::get())
             .await?;
 
         // 删除历史
@@ -245,7 +224,7 @@ impl ConfigManager {
         )
         .bind(namespace_id)
         .bind(config_id)
-        .fetch_all(&self.pool)
+        .fetch_all(DbPool::get())
         .await?;
 
         Ok(rows)
@@ -266,7 +245,7 @@ impl ConfigManager {
         .bind(&entry.create_time)
         .bind(&entry.update_time)
         .bind(&entry.md5)
-        .execute(&self.pool)
+        .execute(DbPool::get())
         .await?;
 
         Ok(())
@@ -276,7 +255,7 @@ impl ConfigManager {
         sqlx::query("DELETE FROM config_history WHERE namespace_id = ? AND id = ?")
             .bind(&namespace_id)
             .bind(&id)
-            .execute(&self.pool)
+            .execute(DbPool::get())
             .await?;
         Ok(())
     }
@@ -288,7 +267,7 @@ impl ConfigManager {
         let history: Option<ConfigEntry> =
             sqlx::query_as("SELECT * FROM config_history WHERE id_ = ?")
                 .bind(id_)
-                .fetch_optional(&self.pool)
+                .fetch_optional(DbPool::get())
                 .await?;
 
         if history.is_none() {
@@ -330,7 +309,7 @@ impl ConfigManager {
     ) -> anyhow::Result<(u64, Vec<ConfigEntry>)> {
         let total: u64 = sqlx::query_scalar("SELECT COUNT(1) FROM config WHERE namespace_id = ?")
             .bind(namespace_id)
-            .fetch_one(&self.pool)
+            .fetch_one(DbPool::get())
             .await?;
 
         let offset = (page_num - 1) * page_size;
@@ -341,7 +320,7 @@ impl ConfigManager {
         .bind(namespace_id)
         .bind(offset)
         .bind(page_size)
-        .fetch_all(&self.pool)
+        .fetch_all(DbPool::get())
         .await?;
 
         Ok((total, rows))
@@ -360,7 +339,7 @@ impl ConfigManager {
         )
         .bind(namespace_id)
         .bind(id)
-        .fetch_one(&self.pool)
+        .fetch_one(DbPool::get())
         .await?;
 
         let offset = (page_num - 1) * page_size;
@@ -372,7 +351,7 @@ impl ConfigManager {
         .bind(id)
         .bind(offset)
         .bind(page_size)
-        .fetch_all(&self.pool)
+        .fetch_all(DbPool::get())
         .await?;
 
         Ok((total, rows))
