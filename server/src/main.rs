@@ -92,7 +92,7 @@ fn init_dir(args: &Args) -> anyhow::Result<()> {
     fs::create_dir_all(data_dir).context("Failed to create data dir")?;
 
     // 数据库文件
-    let db_file = data_dir.join("db").join("config.db");
+    let db_file = data_dir.join("db").join("conreg.db");
     if !Path::exists(&db_file) {
         fs::create_dir_all(db_file.parent().unwrap())?;
         fs::File::create(db_file)?;
