@@ -133,8 +133,6 @@ impl ConfigManager {
             }
         }
 
-        self.notify_config_change(namespace_id.to_string());
-
         Ok(())
     }
 
@@ -159,6 +157,8 @@ impl ConfigManager {
         // 添加历史记录
         self.append_history(&entry).await?;
 
+        self.notify_config_change(entry.namespace_id.to_string());
+
         Ok(())
     }
 
@@ -179,6 +179,8 @@ impl ConfigManager {
 
         // 添加历史记录
         self.append_history(&entry).await?;
+
+        self.notify_config_change(entry.namespace_id.to_string());
 
         Ok(())
     }
