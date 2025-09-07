@@ -95,7 +95,7 @@ impl ClientConfig {
 pub struct ConfigConfig {
     /// 配置中心地址
     #[builder(setter(into))]
-    pub server_addr: String,
+    pub server_addr: ServerAddr,
     /// 命名空间，默认为：public
     #[serde(default = "ConfigConfig::default_namespace")]
     #[builder(setter(into))]

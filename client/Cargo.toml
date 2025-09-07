@@ -2,7 +2,7 @@
 name = "conreg-client"
 version = "0.1.0"
 edition = "2024"
-description = "Conreg is a distributed configuration and registration center similar to Naocs, and conreg client is conreg's client SDK"
+description = "Conreg is a distributed configuration and registration center similar to Nacos, and conreg client is conreg's client SDK"
 license = "Apache-2.0"
 repository = "https://github.com/xgpxg/conreg"
 documentation = "https://docs.rs/conreg-client"

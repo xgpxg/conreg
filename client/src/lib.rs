@@ -178,7 +178,6 @@ use crate::discovery::{Discovery, DiscoveryClient};
 pub use crate::protocol::Instance;
 use anyhow::bail;
 use env_logger::WriteStyle;
-use serde::Deserialize;
 use serde::de::DeserializeOwned;
 use std::path::PathBuf;
 use std::process::exit;
@@ -382,6 +381,7 @@ impl AppDiscovery {
 mod tests {
     use super::*;
     use crate::conf::{ClientConfigBuilder, ConRegConfigBuilder, DiscoveryConfigBuilder};
+    use serde::Deserialize;
     #[tokio::test]
     async fn test_config() {
         //init_log();

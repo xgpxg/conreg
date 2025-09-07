@@ -1,13 +1,14 @@
-use crate::conf::ConfigConfig;
+use crate::conf::{ConfigConfig, ServerAddr};
+use crate::network::HTTP;
+use crate::protocol::request::{GetConfigReq, WatchConfigChangeReq};
 use crate::{AppConfig, ConRegConfig};
-use anyhow::bail;
+use anyhow::Context;
 use serde::{Deserialize, Serialize};
 use serde_yaml::{Mapping, Value, from_str};
 use std::collections::HashMap;
 use std::time::Duration;
 
 pub struct ConfigClient {
-    http_client: reqwest::Client,
     config: ConfigConfig,
 }
 
@@ -20,14 +21,7 @@ pub struct Res<T> {
 
 impl ConfigClient {
     pub fn new(config: &ConRegConfig) -> Self {
-        let http_client = reqwest::ClientBuilder::default()
-            .connect_timeout(Duration::from_secs(1))
-            .timeout(Duration::from_secs(5))
-            .build()
-            .unwrap();
-
         ConfigClient {
-            http_client,
             config: config.config.clone().unwrap(),
         }
     }
@@ -36,13 +30,7 @@ impl ConfigClient {
         let mut contents = vec![];
         for id in self.config.config_ids.iter() {
             contents.push(
-                Self::load_config(
-                    &self.http_client,
-                    &self.config.server_addr,
-                    &self.config.namespace,
-                    id,
-                )
-                .await?,
+                Self::load_config(&self.config.server_addr, &self.config.namespace, id).await?,
             );
         }
 
@@ -56,36 +44,22 @@ impl ConfigClient {
     }
 
     async fn load_config(
-        http_client: &reqwest::Client,
-        server_addr: &str,
+        server_addr: &ServerAddr,
         namespace: &str,
         config_id: &str,
     ) -> anyhow::Result<String> {
-        let url = format!(
-            "http://{}/config/get?namespace_id={}&id={}",
-            server_addr, namespace, config_id
-        );
+        let url = server_addr.build_url("/config/get")?;
+        let query = GetConfigReq {
+            namespace_id: namespace.to_string(),
+            id: config_id.to_string(),
+        };
 
-        let response = http_client.get(url).send().await?;
-        let result = response.json::<Res<HashMap<String, Value>>>().await?;
-        if result.code != 0 {
-            return Err(anyhow::anyhow!("fetch config failed: {}", result.msg));
-        }
+        let result = HTTP.get::<HashMap<String, Value>>(&url, query).await?;
 
-        match result.data {
-            None => {
-                bail!(
-                    "no config id [{}] found in namespace [{}], please check if namespace or config id exists",
-                    config_id,
-                    namespace
-                );
-            }
-            Some(data) => {
-                let content = data.get("content").unwrap().as_str().unwrap();
-                log::info!("config {} fetched", config_id);
-                Ok(content.to_string())
-            }
-        }
+        let content = result.get("content").unwrap().as_str().unwrap();
+        log::info!("config {} fetched", config_id);
+
+        Ok(content.to_string())
     }
 
     async fn start_watch(&self) -> anyhow::Result<()> {
@@ -95,56 +69,37 @@ impl ConfigClient {
                 "start watch config changes in namespace: {}",
                 config_clone.namespace
             );
-            let hc = reqwest::ClientBuilder::default()
-                .connect_timeout(Duration::from_secs(3))
-                .timeout(Duration::from_secs(30))
-                .build()
+            let url = config_clone
+                .server_addr
+                .build_url("/config/watch")
+                .context("build url error from server addr")
                 .unwrap();
-            let url = format!(
-                "http://{}/config/watch?namespace_id={}",
-                config_clone.server_addr, config_clone.namespace
-            );
+            let query = WatchConfigChangeReq {
+                namespace_id: config_clone.namespace.clone(),
+            };
+
             loop {
-                match hc.get(&url).send().await {
-                    Ok(response) => {
-                        if !response.status().is_success() {
-                            log::error!("watch config failed, status: {}", response.status());
-                            tokio::time::sleep(Duration::from_secs(1)).await;
+                match HTTP.get::<bool>(&url, &query).await {
+                    Ok(changed) => {
+                        if !changed {
+                            log::info!("config no changed");
+                            continue;
                         }
-                        let res = response.json::<Res<bool>>().await;
-                        if let Err(e) = res.as_ref() {
-                            log::error!("watch config changes error: {}", e.to_string());
+                        log::info!("config changed, reloading config");
+                        let mut contents = vec![];
+                        for id in config_clone.config_ids.iter() {
+                            contents.push(
+                                Self::load_config(
+                                    &config_clone.server_addr,
+                                    &config_clone.namespace,
+                                    id,
+                                )
+                                .await
+                                .unwrap(),
+                            );
                         }
-                        let res = res.unwrap();
-                        match res.data {
-                            Some(true) => {
-                                log::info!("config changed, reloading config");
-                                let mut contents = vec![];
-                                for id in config_clone.config_ids.iter() {
-                                    contents.push(
-                                        Self::load_config(
-                                            &hc,
-                                            &config_clone.server_addr,
-                                            &config_clone.namespace,
-                                            id,
-                                        )
-                                        .await
-                                        .unwrap(),
-                                    );
-                                }
-                                AppConfig::reload(Configs::from_contents(contents).unwrap());
-                                log::info!("reloading config success");
-                            }
-                            Some(false) => {
-                                log::info!("config no changed");
-                            }
-                            _ => {
-                                log::error!(
-                                    "expected server to return true or false, but actually got: {:?}",
-                                    res.data
-                                );
-                            }
-                        }
+                        AppConfig::reload(Configs::from_contents(contents).unwrap());
+                        log::info!("reloading config success");
                     }
                     Err(e) => {
                         log::error!("watch config changes error: {}", e.to_string());
@@ -157,7 +112,6 @@ impl ConfigClient {
 
     async fn start_compensate(&self) -> anyhow::Result<()> {
         let config_clone = self.config.clone();
-        let hc = self.http_client.clone();
         tokio::spawn(async move {
             log::info!(
                 "start config compensate in namespace: {}",
@@ -171,14 +125,9 @@ impl ConfigClient {
                 let mut contents = vec![];
                 for id in config_clone.config_ids.iter() {
                     contents.push(
-                        Self::load_config(
-                            &hc,
-                            &config_clone.server_addr,
-                            &config_clone.namespace,
-                            id,
-                        )
-                        .await
-                        .unwrap(),
+                        Self::load_config(&config_clone.server_addr, &config_clone.namespace, id)
+                            .await
+                            .unwrap(),
                     );
                 }
                 AppConfig::reload(Configs::from_contents(contents).unwrap());

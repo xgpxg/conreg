@@ -1,3 +1,4 @@
+use crate::conf::ServerAddr;
 use crate::config::Res;
 use anyhow::bail;
 use rand::{Rng, rng};
@@ -7,7 +8,6 @@ use serde::de::DeserializeOwned;
 use std::fmt::Debug;
 use std::sync::LazyLock;
 use std::time::Duration;
-use crate::conf::ServerAddr;
 
 pub struct Network {
     client: reqwest::Client,
@@ -16,7 +16,7 @@ pub struct Network {
 pub static HTTP: LazyLock<Network> = LazyLock::new(|| {
     let client = reqwest::ClientBuilder::default()
         .connect_timeout(Duration::from_secs(1))
-        .read_timeout(Duration::from_secs(5))
+        .read_timeout(Duration::from_secs(60))
         .build()
         .unwrap();
     Network { client }

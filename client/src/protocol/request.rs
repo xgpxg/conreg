@@ -2,23 +2,34 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RegisterReq {
-    pub namespace_id: String,
-    pub service_id: String,
-    pub ip: String,
-    pub port: u16,
-    pub meta: HashMap<String, String>,
+pub(crate) struct GetConfigReq {
+    pub(crate) namespace_id: String,
+    pub(crate) id: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GetInstancesReq {
-    pub namespace_id: String,
-    pub service_id: String,
+pub(crate) struct WatchConfigChangeReq {
+    pub(crate) namespace_id: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct HeartbeatReq {
-    pub namespace_id: String,
-    pub service_id: String,
-    pub instance_id: String,
+pub(crate) struct RegisterReq {
+    pub(crate) namespace_id: String,
+    pub(crate) service_id: String,
+    pub(crate) ip: String,
+    pub(crate) port: u16,
+    pub(crate) meta: HashMap<String, String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub(crate) struct GetInstancesReq {
+    pub(crate) namespace_id: String,
+    pub(crate) service_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub(crate) struct HeartbeatReq {
+    pub(crate) namespace_id: String,
+    pub(crate) service_id: String,
+    pub(crate) instance_id: String,
 }
