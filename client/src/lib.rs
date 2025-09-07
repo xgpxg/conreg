@@ -34,8 +34,12 @@
 //! ```
 //!
 
+use crate::conf::{ConRegConfig, ConRegConfigWrapper};
 use crate::config::Configs;
+use crate::discovery::{Discovery, DiscoveryClient};
+use crate::protocol::Instance;
 use anyhow::bail;
+use derive_builder::Builder;
 use env_logger::WriteStyle;
 use serde::Deserialize;
 use serde::de::DeserializeOwned;
@@ -43,66 +47,23 @@ use std::path::PathBuf;
 use std::process::exit;
 use std::sync::{Arc, OnceLock, RwLock};
 
+mod conf;
 mod config;
-mod reg;
+mod discovery;
+mod network;
+mod protocol;
+mod utils;
 
 struct ConReg;
 
-/// 配置/注册中心的整体配置
-/// 包一层是因为适配bootstrap.yaml中顶层的key为conreg
-#[derive(Debug, Deserialize, Clone)]
-struct ConRegConfigWrapper {
-    conreg: ConRegConfig,
-}
-
-/// 配置/注册中心配置
-#[derive(Debug, Deserialize, Clone)]
-#[serde(rename_all = "kebab-case")]
-pub struct ConRegConfig {
-    /// 服务ID
-    #[allow(unused)]
-    service_id: String,
-    /// 配置中心配置项
-    #[serde(default = "ConRegConfig::default_config")]
-    config: Config,
-}
-
-impl ConRegConfig {
-    fn default_config() -> Config {
-        Config::default()
-    }
-}
-
-#[derive(Debug, Clone, Deserialize, Default)]
-#[serde(rename_all = "kebab-case")]
-struct Config {
-    /// 配置中心地址，如：127.0.0.1:8000
-    server_addr: String,
-    /// 命名空间，默认为：public
-    #[serde(default = "Config::default_namespace")]
-    namespace: String,
-    /// 配置ID，如：`["application.yaml"]`
-    #[serde(default)]
-    config_ids: Vec<String>,
-}
-
-impl Config {
-    /// 默认命名空间
-    fn default_namespace() -> String {
-        "public".to_string()
-    }
-}
-
-#[derive(Debug, Deserialize, Default, Clone)]
-struct Discovery {}
-
 /// 存储配置内容
 static CONFIGS: OnceLock<Arc<RwLock<Configs>>> = OnceLock::new();
+/// 服务发现全局实例
+static DISCOVERY: OnceLock<Discovery> = OnceLock::new();
 
 impl ConReg {
     /// 初始化配置中心和注册中心
     async fn init(file: Option<PathBuf>) -> anyhow::Result<()> {
-        init_log();
         let mut file = file.unwrap_or("bootstrap.yaml".into());
         if !file.exists() {
             file = "bootstrap.yml".into();
@@ -127,17 +88,34 @@ impl ConReg {
 
         Self::init_with(&config.conreg).await?;
 
+        log::info!("conreg init completed");
         Ok(())
     }
 
     async fn init_with(config: &ConRegConfig) -> anyhow::Result<()> {
         init_log();
-        let config = config::ConfigClient::new(&config.config).load().await?;
-        CONFIGS.set(Arc::new(RwLock::new(config))).map_err(|_| {
-            anyhow::anyhow!(
-                "config has already been initialized, please do not initialize repeatedly"
-            )
-        })?;
+
+        if config.config.is_some() {
+            let config_client = config::ConfigClient::new(&config);
+            let configs = config_client.load().await?;
+            CONFIGS.set(Arc::new(RwLock::new(configs))).map_err(|_| {
+                anyhow::anyhow!(
+                    "config has already been initialized, please do not initialize repeatedly"
+                )
+            })?;
+        }
+
+        if config.discovery.is_some() {
+            let discovery_client = DiscoveryClient::new(config);
+            discovery_client.register().await?;
+            let discovery = Discovery::new(discovery_client).await;
+            DISCOVERY.set(discovery).map_err(|_| {
+                anyhow::anyhow!(
+                    "discovery has already been initialized, please do not initialize repeatedly"
+                )
+            })?;
+        }
+
         Ok(())
     }
 }
@@ -245,23 +223,43 @@ fn init_log() {
         .init();
 }
 
+pub struct AppDiscovery;
+impl AppDiscovery {
+    pub async fn get_instances(service_id: &str) -> anyhow::Result<Vec<Instance>> {
+        match DISCOVERY.get() {
+            Some(discovery) => {
+                //let discovery = discovery.read().expect("read lock error");
+                let instances = discovery.get_instances(service_id).await;
+                Ok(instances)
+            }
+            None => {
+                bail!("discovery not initialized")
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     #[tokio::test]
-    async fn test_init() {
+    async fn test_config() {
         //init_log();
-        //init().await;
+        init().await;
         //init_from_file("bootstrap.yaml").await;
-        init_with(ConRegConfig {
-            service_id: "test".to_string(),
-            config: Config {
-                server_addr: "127.0.0.1:8000".to_string(),
-                namespace: "public".to_string(),
-                config_ids: vec!["test.yaml".to_string()],
-            },
-        })
-        .await;
+        // init_with(ConRegConfig {
+        //     service_id: "test".to_string(),
+        //     config: Config {
+        //         server_addr: "127.0.0.1:8000".to_string(),
+        //         namespace: "public".to_string(),
+        //         config_ids: vec!["test.yaml".to_string()],
+        //     },
+        //     discovery: Discovery {
+        //         server_addr: "127.0.0.1:8001".to_string(),
+        //         namespace: "public".to_string(),
+        //     },
+        // })
+        //.await;
         println!("{:?}", AppConfig::get::<String>("name"));
         println!("{:?}", AppConfig::get::<u32>("age"));
 
@@ -272,12 +270,40 @@ mod tests {
         let my_config = AppConfig::bind::<MyConfig>().unwrap();
         println!("my config, name: {:?}", my_config.name);
 
-        tokio::spawn(async move {
+        let h = tokio::spawn(async move {
             loop {
                 println!("{:?}", AppConfig::get::<String>("name"));
                 tokio::time::sleep(std::time::Duration::from_secs(1)).await;
             }
         });
-        tokio::time::sleep(std::time::Duration::from_secs(50)).await;
+        tokio::join!(h);
+    }
+
+    #[tokio::test]
+    async fn test_discovery() {
+        //init_log();
+        init().await;
+        // let config = ConRegConfigBuilder::default()
+        //     .service_id("test_discovery")
+        //     .discovery(
+        //         DiscoveryConfigBuilder::default()
+        //             .server_addr("127.0.0.1:8000")
+        //             .build()
+        //             .unwrap(),
+        //     )
+        //     .build()
+        //     .unwrap();
+        // println!("config: {:?}", config);
+        // let service_id = config.service_id.clone();
+        // init_with(config).await;
+        let service_id = utils::current_process_name();
+        let h = tokio::spawn(async move {
+            loop {
+                let instances = AppDiscovery::get_instances(&service_id).await.unwrap();
+                println!("current: {:?}", instances);
+                tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+            }
+        });
+        tokio::join!(h);
     }
 }

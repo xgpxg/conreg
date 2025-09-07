@@ -3,6 +3,7 @@ use chrono::{DateTime, Local};
 use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::ops::Deref;
 use std::sync::Arc;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -20,8 +21,10 @@ pub struct ServiceInstance {
     /// 元数据
     pub meta: HashMap<String, String>,
     /// 最后一次心跳时间
+    #[serde(skip)]
     last_heartbeat: DateTime<Local>,
     /// 丢失心跳的周期数
+    #[serde(skip)]
     lost_heartbeats: usize,
 }
 
@@ -61,10 +64,6 @@ pub enum InstanceStatus {
 pub enum HeartbeatResult {
     /// Ok
     Ok,
-    /// 错误
-    Error(String),
-    // /// 找不到服务，需要重新注册服务
-    // NoServiceFound,
     /// 找不到实例，需要重新注册服务实例
     NoInstanceFound,
 }
@@ -200,7 +199,10 @@ impl Discovery {
     }
 
     /// 按服务ID获取可用服务实例
-    pub fn get_available_services(&self, service_id: &str) -> anyhow::Result<Vec<ServiceInstance>> {
+    pub fn get_available_service_instances(
+        &self,
+        service_id: &str,
+    ) -> anyhow::Result<Vec<ServiceInstance>> {
         let list = self
             .services
             .get(service_id)
@@ -275,6 +277,10 @@ impl Discovery {
                 })
             }
         });
+    }
+
+    pub fn services(&self) -> DashMap<String, Vec<ServiceInstance>> {
+        self.services.deref().clone()
     }
 }
 

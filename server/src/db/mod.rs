@@ -9,7 +9,7 @@ pub struct DbPool {
 }
 impl DbPool {
     pub async fn new(args: &Args) -> anyhow::Result<DbPool> {
-        let db_url = &format!("sqlite:{}/{}/{}", args.data_dir, "db", "config.db");
+        let db_url = &format!("sqlite:{}/{}/{}", args.data_dir, "db", "conreg.db");
         let pool = SqlitePoolOptions::new()
             .max_connections(5)
             .connect(db_url)

@@ -2,9 +2,11 @@ use crate::app::get_app;
 use crate::discovery::discovery::{HeartbeatResult, ServiceInstance};
 use crate::discovery::server::Service;
 use crate::protocol::res::Res;
+use dashmap::DashMap;
 use rocket::serde::json::Json;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::sync::Arc;
 
 pub fn routes() -> Vec<rocket::Route> {
     routes![
@@ -39,7 +41,6 @@ struct RegisterServiceInstanceReq {
     ip: String,
     port: u16,
     meta: HashMap<String, String>,
-    persistent: bool,
 }
 impl Into<ServiceInstance> for RegisterServiceInstanceReq {
     fn into(self) -> ServiceInstance {
@@ -167,8 +168,6 @@ async fn available(namespace_id: &str, service_id: &str) -> Res<Vec<ServiceInsta
 }
 
 /// 接收客户端心跳
-///
-/// 心跳请求不用在集群间同步
 #[post("/heartbeat", data = "<req>")]
 async fn heartbeat(req: Json<HeartbeatReq>) -> Res<HeartbeatResult> {
     match get_app()

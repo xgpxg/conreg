@@ -112,7 +112,7 @@ fn init_log() {
         .with_writer(std::io::stderr)
         .with_env_filter(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "warn,rocket=warn,rocket::response::debug=error".into()),
+                .unwrap_or_else(|_| "info,rocket=warn,rocket::response::debug=error".into()),
         )
         .with_level(true)
         .with_ansi(true)

@@ -12,6 +12,7 @@ use sqlx::Row;
 use sqlx::sqlite::SqliteRow;
 use std::collections::HashMap;
 use std::ops::Deref;
+use std::sync::Arc;
 use std::time::Duration;
 use tracing::log;
 
@@ -329,7 +330,7 @@ impl DiscoveryManager {
         service_id: &str,
     ) -> anyhow::Result<Vec<ServiceInstance>> {
         let discovery = self.try_get_discovery(namespace_id).await?;
-        let instances = discovery.get_available_services(service_id)?;
+        let instances = discovery.get_available_service_instances(service_id)?;
         Ok(instances)
     }
 

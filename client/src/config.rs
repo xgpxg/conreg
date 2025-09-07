@@ -1,4 +1,5 @@
-use crate::{AppConfig, Config};
+use crate::conf::ConfigConfig;
+use crate::{AppConfig, ConRegConfig};
 use anyhow::bail;
 use serde::{Deserialize, Serialize};
 use serde_yaml::{Mapping, Value, from_str};
@@ -7,7 +8,7 @@ use std::time::Duration;
 
 pub struct ConfigClient {
     http_client: reqwest::Client,
-    config: Config,
+    config: ConfigConfig,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -16,8 +17,9 @@ pub struct Res<T> {
     pub msg: String,
     pub data: Option<T>,
 }
+
 impl ConfigClient {
-    pub fn new(config: &Config) -> Self {
+    pub fn new(config: &ConRegConfig) -> Self {
         let http_client = reqwest::ClientBuilder::default()
             .connect_timeout(Duration::from_secs(1))
             .timeout(Duration::from_secs(5))
@@ -26,9 +28,10 @@ impl ConfigClient {
 
         ConfigClient {
             http_client,
-            config: config.clone(),
+            config: config.config.clone().unwrap(),
         }
     }
+
     pub(crate) async fn load(&self) -> anyhow::Result<Configs> {
         let mut contents = vec![];
         for id in self.config.config_ids.iter() {
@@ -193,7 +196,7 @@ pub struct Configs {
 }
 
 impl Configs {
-    pub fn from_contents(contents: Vec<String>) -> anyhow::Result<Self> {
+    fn from_contents(contents: Vec<String>) -> anyhow::Result<Self> {
         let mut merged_config = Value::Mapping(Mapping::new());
 
         // 依次解析并合并每个配置文件

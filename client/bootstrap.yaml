@@ -1,12 +1,23 @@
 conreg:
   # 服务ID
-  service-id: test
+  #service-id: test
+  # 客户端配置
+  client:
+    # 监听地址
+    address: 127.0.0.1
+    # 端口
+    port: 8000
+  # 配置中心
   config:
-    # 配置/注册中心地址
+    # 配置中心地址
     server-addr: 127.0.0.1:8000
     # 配置ID
     config-ids:
-      - test
       - test.yaml
+  # 注册中心
   discovery:
-    server-addr: 127.0.0.1:8000
+    # 注册中心地址
+    server-addr:
+      - 127.0.0.1:8000
+      - 127.0.0.1:8001
+      - 127.0.0.1:8002
