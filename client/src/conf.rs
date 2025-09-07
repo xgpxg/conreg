@@ -70,6 +70,7 @@ impl From<&str> for ServerAddr {
 
 #[derive(Debug, Deserialize, Clone, Builder)]
 pub struct ClientConfig {
+    #[builder(setter(into))]
     pub address: String,
     pub port: u16,
 }
@@ -91,15 +92,17 @@ impl ClientConfig {
 
 #[derive(Debug, Clone, Deserialize, Default, Builder)]
 #[serde(rename_all = "kebab-case")]
-pub(crate) struct ConfigConfig {
+pub struct ConfigConfig {
     /// 配置中心地址
-    pub(crate) server_addr: String,
+    #[builder(setter(into))]
+    pub server_addr: String,
     /// 命名空间，默认为：public
     #[serde(default = "ConfigConfig::default_namespace")]
-    pub(crate) namespace: String,
+    #[builder(setter(into))]
+    pub namespace: String,
     /// 配置ID，如：`["application.yaml"]`
     #[serde(default)]
-    pub(crate) config_ids: Vec<String>,
+    pub config_ids: Vec<String>,
 }
 
 impl ConfigConfig {
@@ -111,14 +114,14 @@ impl ConfigConfig {
 
 #[derive(Debug, Clone, Deserialize, Default, Builder)]
 #[serde(rename_all = "kebab-case")]
-pub(crate) struct DiscoveryConfig {
+pub struct DiscoveryConfig {
     /// 配置中心地址，如：127.0.0.1:8000
     #[builder(setter(into))]
-    pub(crate) server_addr: ServerAddr,
+    pub server_addr: ServerAddr,
     /// 命名空间，默认为：public
     #[serde(default = "DiscoveryConfig::default_namespace")]
     #[builder(setter(into), default = "DiscoveryConfig::default_namespace()")]
-    pub(crate) namespace: String,
+    pub namespace: String,
 }
 
 impl DiscoveryConfig {
