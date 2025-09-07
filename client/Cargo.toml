@@ -1,6 +1,6 @@
 [package]
 name = "conreg-client"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 description = "Conreg is a distributed configuration and registration center similar to Nacos, and conreg client is conreg's client SDK"
 license = "Apache-2.0"
