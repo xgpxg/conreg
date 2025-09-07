@@ -24,15 +24,13 @@
 - [ ] 登录校验
 - [ ] OpenAPI鉴权
 
-客户端SDK：
-
-文档：[conreg-client](https://docs.rs/conreg-client)
+客户端SDK（[conreg-client](https://docs.rs/conreg-client)）：
 
 - [x] 配置获取
 - [x] 服务注册
 - [x] 服务发现
 - [ ] 负载均衡
 
-# 架构图
+# 整体架构
 
 <img alt="architecture" src="docs/architecture.png" width="500px"/>

@@ -1,10 +1,8 @@
-//! # Conreg Client
-//!
-//! conreg是一个参考了Nacos设计的分布式服务注册和配置中心。
+//! conreg是一个参考了Nacos设计的分布式服务注册和配置中心。详情请看：[conreg](https://github.com/xgpxg/conreg)
 //!
 //! conreg-client是conreg的客户端SDK，用于集成到您的服务中和conreg-server通信。
 //!
-//! > 注意：当前conreg的0.1.x版本仍处于快速迭代中，API在未来可能会发生变化
+//! ℹ️ 注意：当前conreg的0.1.x版本仍处于快速迭代中，API在未来可能会发生变化
 //!
 //! # 快速开始
 //!
@@ -177,7 +175,6 @@ use crate::config::Configs;
 use crate::discovery::{Discovery, DiscoveryClient};
 pub use crate::protocol::Instance;
 use anyhow::bail;
-use env_logger::WriteStyle;
 use serde::de::DeserializeOwned;
 use std::path::PathBuf;
 use std::process::exit;
@@ -190,14 +187,14 @@ mod network;
 mod protocol;
 mod utils;
 
-struct ConReg;
+struct Conreg;
 
 /// 存储配置内容
 static CONFIGS: OnceLock<Arc<RwLock<Configs>>> = OnceLock::new();
 /// 服务发现全局实例
 static DISCOVERY: OnceLock<Discovery> = OnceLock::new();
 
-impl ConReg {
+impl Conreg {
     /// 初始化配置中心和注册中心
     async fn init(file: Option<PathBuf>) -> anyhow::Result<()> {
         let mut file = file.unwrap_or("bootstrap.yaml".into());
@@ -229,7 +226,7 @@ impl ConReg {
     }
 
     async fn init_with(config: &ConRegConfig) -> anyhow::Result<()> {
-        init_log();
+        utils::init_log();
 
         if config.config.is_some() {
             let config_client = config::ConfigClient::new(&config);
@@ -258,7 +255,7 @@ impl ConReg {
 
 /// 初始化配置中心和注册中心
 pub async fn init() {
-    match ConReg::init(None).await {
+    match Conreg::init(None).await {
         Ok(_) => {}
         Err(e) => {
             log::error!("conreg init failed: {}", e);
@@ -269,7 +266,7 @@ pub async fn init() {
 
 /// 从配置文件初始化配置中心和注册中心
 pub async fn init_from_file(path: impl Into<PathBuf>) {
-    match ConReg::init(Some(path.into())).await {
+    match Conreg::init(Some(path.into())).await {
         Ok(_) => {}
         Err(e) => {
             log::error!("conreg init failed: {}", e);
@@ -280,7 +277,7 @@ pub async fn init_from_file(path: impl Into<PathBuf>) {
 
 /// 从自定义配置初始化
 pub async fn init_with(config: ConRegConfig) {
-    match ConReg::init_with(&config).await {
+    match Conreg::init_with(&config).await {
         Ok(_) => {}
         Err(e) => {
             log::error!("conreg init failed: {}", e);
@@ -341,31 +338,12 @@ impl AppConfig {
     }
 }
 
-fn init_log() {
-    use std::io::Write;
-    env_logger::Builder::new()
-        .filter_level(log::LevelFilter::Info)
-        .parse_default_env()
-        .format(|buf, record| {
-            let level = record.level().as_str();
-            writeln!(
-                buf,
-                "[{}][{}] - {}",
-                chrono::Local::now().format("%Y-%m-%d %H:%M:%S%.3f"),
-                level,
-                record.args()
-            )
-        })
-        .write_style(WriteStyle::Always)
-        .init();
-}
-
 pub struct AppDiscovery;
 impl AppDiscovery {
+    /// 获取指定服务的可用的服务实例
     pub async fn get_instances(service_id: &str) -> anyhow::Result<Vec<Instance>> {
         match DISCOVERY.get() {
             Some(discovery) => {
-                //let discovery = discovery.read().expect("read lock error");
                 let instances = discovery.get_instances(service_id).await;
                 Ok(instances)
             }

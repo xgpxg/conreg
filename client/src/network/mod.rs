@@ -1,5 +1,4 @@
 use crate::conf::ServerAddr;
-use crate::config::Res;
 use anyhow::bail;
 use rand::{Rng, rng};
 use reqwest::StatusCode;
@@ -8,6 +7,7 @@ use serde::de::DeserializeOwned;
 use std::fmt::Debug;
 use std::sync::LazyLock;
 use std::time::Duration;
+use crate::protocol::response::Res;
 
 pub struct Network {
     client: reqwest::Client,

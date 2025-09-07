@@ -12,38 +12,37 @@ pub struct ConfigClient {
     config: ConfigConfig,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Res<T> {
-    pub code: i32,
-    pub msg: String,
-    pub data: Option<T>,
-}
-
 impl ConfigClient {
     pub fn new(config: &ConRegConfig) -> Self {
         ConfigClient {
-            config: config.config.clone().unwrap(),
+            config: config
+                .config
+                .clone()
+                .context("config not set, unable to create config client")
+                .unwrap(),
         }
     }
 
+    /// 初始化配置
     pub(crate) async fn load(&self) -> anyhow::Result<Configs> {
         let mut contents = vec![];
         for id in self.config.config_ids.iter() {
             contents.push(
-                Self::load_config(&self.config.server_addr, &self.config.namespace, id).await?,
+                Self::fetch_config(&self.config.server_addr, &self.config.namespace, id).await?,
             );
         }
 
         // 启动监听，监听配置变化
         self.start_watch().await?;
 
-        // 启动补偿任务
+        // 启动补偿任务，定时拉取配置
         self.start_compensate().await?;
 
         Configs::from_contents(contents)
     }
 
-    async fn load_config(
+    /// 从配置中心加载指定配置ID的配置内容
+    async fn fetch_config(
         server_addr: &ServerAddr,
         namespace: &str,
         config_id: &str,
@@ -62,6 +61,10 @@ impl ConfigClient {
         Ok(content.to_string())
     }
 
+    /// 开启配置变更监听任务
+    ///
+    /// 目前使用长轮询的方式，在没有配置变更时，server会阻塞29秒后返回false；
+    /// 在有配置变更时，server会立即返回true，然后重新从server拉取配置。
     async fn start_watch(&self) -> anyhow::Result<()> {
         let config_clone = self.config.clone();
         tokio::spawn(async move {
@@ -89,7 +92,7 @@ impl ConfigClient {
                         let mut contents = vec![];
                         for id in config_clone.config_ids.iter() {
                             contents.push(
-                                Self::load_config(
+                                Self::fetch_config(
                                     &config_clone.server_addr,
                                     &config_clone.namespace,
                                     id,
@@ -99,7 +102,7 @@ impl ConfigClient {
                             );
                         }
                         AppConfig::reload(Configs::from_contents(contents).unwrap());
-                        log::info!("reloading config success");
+                        log::info!("config reloaded");
                     }
                     Err(e) => {
                         log::error!("watch config changes error: {}", e.to_string());
@@ -110,6 +113,9 @@ impl ConfigClient {
         Ok(())
     }
 
+    /// 开启配置补偿任务
+    ///
+    /// 每60秒从配置中心同步一次配置
     async fn start_compensate(&self) -> anyhow::Result<()> {
         let config_clone = self.config.clone();
         tokio::spawn(async move {
@@ -119,19 +125,19 @@ impl ConfigClient {
             );
 
             loop {
-                tokio::time::sleep(Duration::from_secs(45)).await;
+                tokio::time::sleep(Duration::from_secs(60)).await;
 
-                log::info!("starting sync config");
+                log::debug!("starting fetch config");
                 let mut contents = vec![];
                 for id in config_clone.config_ids.iter() {
                     contents.push(
-                        Self::load_config(&config_clone.server_addr, &config_clone.namespace, id)
+                        Self::fetch_config(&config_clone.server_addr, &config_clone.namespace, id)
                             .await
                             .unwrap(),
                     );
                 }
                 AppConfig::reload(Configs::from_contents(contents).unwrap());
-                log::info!("config sync success");
+                log::debug!("config fetch success");
             }
         });
         Ok(())
@@ -171,7 +177,7 @@ impl Configs {
     /// 后面的值会覆盖前面相同键的值
     fn merge_yaml_values(target: &mut Value, source: Value) {
         match (target, source) {
-            // 当两个值都是映射类型时，递归合并
+            // 当两个值都是mapping类型时，递归合并
             (Value::Mapping(target_map), Value::Mapping(source_map)) => {
                 for (key, value) in source_map {
                     if target_map.contains_key(&key) {
@@ -190,7 +196,7 @@ impl Configs {
         }
     }
 
-    /// 将嵌套的 YAML 值扁平化为键值对
+    /// 展开yaml的key，通过"."分隔
     fn flatten_yaml_value(result: &mut HashMap<String, Value>, prefix: &str, value: &Value) {
         match value {
             Value::Mapping(mapping) => {
@@ -217,14 +223,23 @@ impl Configs {
         }
     }
 
+    /// 获取配置项
     pub fn get(&self, key: &str) -> Option<&Value> {
         self.configs.get(key)
     }
 
+    /// 获取所有配置项
     #[allow(unused)]
     pub fn get_all(&self) -> &HashMap<String, Value> {
         &self.configs
     }
+
+    /// 检查配置是否存在
+    #[allow(unused)]
+    pub fn contains(&self, key: &str) -> bool {
+        self.configs.contains_key(key)
+    }
+
 }
 
 #[cfg(test)]

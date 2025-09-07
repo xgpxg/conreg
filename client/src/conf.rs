@@ -98,7 +98,7 @@ pub struct ConfigConfig {
     pub server_addr: ServerAddr,
     /// 命名空间，默认为：public
     #[serde(default = "ConfigConfig::default_namespace")]
-    #[builder(setter(into))]
+    #[builder(setter(into), default = "ConfigConfig::default_namespace()")]
     pub namespace: String,
     /// 配置ID，如：`["application.yaml"]`
     #[serde(default)]

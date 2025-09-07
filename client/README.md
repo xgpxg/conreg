@@ -1,11 +1,10 @@
 # Conreg Client
 
-conreg是一个参考了Nacos设计的分布式服务注册和配置中心。
+conreg是一个参考了Nacos设计的分布式服务注册和配置中心。详情请看：[conreg](https://github.com/xgpxg/conreg)
+
 conreg-client是conreg的客户端SDK，用于集成到您的服务中和conreg-server通信。
 
-conreg-server：[https://github.com/xgpxg/conreg](https://github.com/xgpxg/conreg)
-
-⚠️ 注意：当前conreg的0.1.x版本仍处于快速迭代中，API在未来可能会发生变化
+ℹ️ 注意：当前conreg的0.1.x版本仍处于快速迭代中，API在未来可能会发生变化
 
 # 快速开始
 

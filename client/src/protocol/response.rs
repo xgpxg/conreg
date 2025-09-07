@@ -1,7 +1,15 @@
 use serde::{Deserialize, Serialize};
 
+/// 响应结果
+#[derive(Debug, Serialize, Deserialize)]
+pub(crate) struct Res<T> {
+    pub code: i32,
+    pub msg: String,
+    pub data: Option<T>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum HeartbeatResult {
+pub(crate) enum HeartbeatResult {
     /// Ok
     Ok,
     /// 找不到实例，需要重新注册服务实例
