@@ -9,7 +9,6 @@
 - [x] 一致性同步（Raft）
 - [x] 配置历史记录
 - [x] 配置恢复
-- [x] 客户端SDK（文档：[Conreg Client](https://docs.rs/conreg-client))）
 - [ ] Web UI
 
 注册中心：
@@ -18,13 +17,21 @@
 - [x] 服务注册
 - [x] 心跳检测
 - [ ] 服务发现
-- [x] 客户端SDK
 - [ ] Web UI
 
 安全：
 
 - [ ] 登录校验
 - [ ] OpenAPI鉴权
+
+客户端SDK：
+
+文档：[conreg-client](https://docs.rs/conreg-client)
+
+- [x] 配置获取
+- [x] 服务注册
+- [x] 服务发现
+- [ ] 负载均衡
 
 # 架构图
 

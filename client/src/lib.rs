@@ -183,7 +183,7 @@ use std::path::PathBuf;
 use std::process::exit;
 use std::sync::{Arc, OnceLock, RwLock};
 
-mod conf;
+pub mod conf;
 mod config;
 mod discovery;
 mod network;
