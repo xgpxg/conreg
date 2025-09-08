@@ -32,6 +32,15 @@
 - [x] 服务发现
 - [ ] 负载均衡
 
+集群管理工具：
+
+- [x] 集群初始化
+- [x] 集群扩容
+- [x] 集群缩容
+- [x] Raft状态监控
+- [ ] 集群升级
+- [ ] 集群备份
+
 # 整体架构
 
 <img alt="architecture" src="docs/architecture.png" width="500px"/>
@@ -68,10 +77,10 @@ curl -X POST http://127.0.0.1:8001/init -d [[1,"127.0.0.1:8000"],[2,"127.0.0.1:8
 
 - 使用集群管理工具
 
-提供了一个集群管理的CLI工具，用于集群创建、扩容和缩容。
+提供了一个集群管理的CLI工具，用于集群创建、扩容和缩容：[conreg-cmt](https://crates.io/crates/conreg-cmt)
 
 ```shell
-Usage: conreg-cmt [OPTIONS] <COMMAND>
+Usage: conreg-cmt --server <SERVER> <COMMAND>
 
 Commands:
   init         Initialize the cluster
