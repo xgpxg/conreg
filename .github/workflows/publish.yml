@@ -23,6 +23,6 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
-          files: target/x86_64-unknown-linux-musl/release/conreg-server:conreg-server-linux-amd64
+          files: target/x86_64-unknown-linux-musl/release/conreg-server
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
