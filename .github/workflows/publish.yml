@@ -21,17 +21,8 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: target/x86_64-unknown-linux-musl/release/conreg-server
           tag_name: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
+          files: target/x86_64-unknown-linux-musl/release/conreg-server:conreg-server-linux-amd64
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: target/x86_64-unknown-linux-musl/release/conreg-server
-          asset_name: conreg-server-linux-amd64
-          asset_content_type: application/octet-stream
