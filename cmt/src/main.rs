@@ -11,7 +11,7 @@ use std::str::FromStr;
 #[command(version, about, long_about = None)]
 pub struct Args {
     /// Address of any node in the cluster
-    #[arg(short, long, default_value = "127.0.0.1:8000")]
+    #[arg(required = true, short, long, default_value = "127.0.0.1:8000")]
     server: String,
 
     /// Command

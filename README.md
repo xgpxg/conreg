@@ -71,7 +71,7 @@ curl -X POST http://127.0.0.1:8000/init -d [[1,"127.0.0.1:8000"],[2,"127.0.0.1:8
 提供了一个集群管理的CLI工具，用于集群创建、扩容和缩容。
 
 ```shell
-Usage: conreg-cms [OPTIONS] <COMMAND>
+Usage: conreg-cmt [OPTIONS] <COMMAND>
 
 Commands:
   init         Initialize the cluster
