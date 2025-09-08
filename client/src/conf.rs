@@ -67,6 +67,16 @@ impl From<&str> for ServerAddr {
         ServerAddr::Single(value.to_string())
     }
 }
+impl From<Vec<&str>> for ServerAddr {
+    fn from(value: Vec<&str>) -> Self {
+        ServerAddr::Cluster(value.into_iter().map(|s| s.to_string()).collect())
+    }
+}
+impl From<Vec<String>> for ServerAddr {
+    fn from(value: Vec<String>) -> Self {
+        ServerAddr::Cluster(value)
+    }
+}
 
 #[derive(Debug, Deserialize, Clone, Builder)]
 pub struct ClientConfig {

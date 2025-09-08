@@ -12,7 +12,6 @@ use sqlx::Row;
 use sqlx::sqlite::SqliteRow;
 use std::collections::HashMap;
 use std::ops::Deref;
-use std::sync::Arc;
 use std::time::Duration;
 use tracing::log;
 

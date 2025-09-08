@@ -9,6 +9,7 @@
 - [x] 一致性同步（Raft）
 - [x] 配置历史记录
 - [x] 配置恢复
+- [ ] 导入/导出配置
 - [ ] Web UI
 
 注册中心：
@@ -34,3 +35,24 @@
 # 整体架构
 
 <img alt="architecture" src="docs/architecture.png" width="500px"/>
+
+# Conreg Server
+
+## 单机部署
+
+- 启动
+```shell
+conreg-server -p 8000 -d ./data -m standalone
+```
+
+## 集群部署
+
+- 在同一台机器上的不同端口启动
+```shell
+conreg-server -p 8001 -d ./data1 -m cluster -n 1
+conreg-server -p 8002 -d ./data2 -m cluster -n 2
+conreg-server -p 8003 -d ./data3 -m cluster -n 3
+```
+
+- 使用集群管理工具 
+TODO

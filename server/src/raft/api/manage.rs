@@ -88,7 +88,7 @@ pub async fn change_membership(
                                 .await
                             }
                             None => {
-                                log::debug!("forward to leader error: no leader");
+                                log::error!("forward to leader error: no leader");
                                 Err(Status::InternalServerError)
                             }
                         };

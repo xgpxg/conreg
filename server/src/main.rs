@@ -1,14 +1,18 @@
 #[macro_use]
 extern crate rocket;
 
+use crate::app::get_app;
 use anyhow::Context;
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use rocket::Config;
 use rocket::data::{ByteUnit, Limits};
+use rocket::fairing::AdHoc;
+use std::collections::BTreeSet;
 use std::fs;
 use std::net::IpAddr;
 use std::path::Path;
 use std::str::FromStr;
+use tracing::log;
 
 mod app;
 mod config;
@@ -34,6 +38,18 @@ pub struct Args {
     /// Node id, used for raft cluster, must be unique, and must be greater than 0
     #[arg(short, long, default_value_t = 1)]
     node_id: u64,
+    #[arg(short, long, default_value = "standalone")]
+    mode: Mode,
+}
+
+#[derive(Parser, Debug, Clone, ValueEnum)]
+pub enum Mode {
+    /// 单机模式
+    #[clap(name = "standalone")]
+    Standalone,
+    /// 集群模式
+    #[clap(name = "cluster")]
+    Cluster,
 }
 
 #[rocket::main]
@@ -81,6 +97,13 @@ async fn start_http_server(args: &Args) -> anyhow::Result<()> {
 
     //builder = builder.manage(App::new(&args).await);
 
+    let args_clone = args.clone();
+    builder = builder.attach(AdHoc::on_liftoff("Post-startup tasks", move |_| {
+        Box::pin(async move {
+            after_http_server_start(&args_clone).await.unwrap();
+        })
+    }));
+
     builder.launch().await?;
 
     Ok(())
@@ -111,8 +134,9 @@ fn init_log() {
     tracing_subscriber::fmt()
         .with_writer(std::io::stderr)
         .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "info,rocket=warn,rocket::response::debug=error".into()),
+            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {
+                "info,rocket=warn,rocket::response::debug=error,rocket::launch=error".into()
+            }),
         )
         .with_level(true)
         .with_ansi(true)
@@ -122,4 +146,59 @@ fn init_log() {
         ))
         .compact() // 避免乱码问题
         .init();
+}
+
+pub(crate) async fn after_http_server_start(args: &Args) -> anyhow::Result<()> {
+    match args.mode {
+        #[rustfmt::skip]
+        Mode::Standalone => {
+            let app = get_app();
+            let is_initialized = app.raft.is_initialized().await?;
+            if !is_initialized {
+                app.raft.initialize(BTreeSet::from([args.node_id])).await?;
+            }
+            let is_initialized = app.raft.is_initialized().await?;
+            log::info!("┌─────────────────────────────────────────────────┐");
+            log::info!("│               CONREG STANDALONE MODE            │");
+            log::info!("├─────────────────────────────────────────────────┤");
+            log::info!("│ Address        : {:<30} │", args.address);
+            log::info!("│ Port           : {:<30} │", args.port);
+            log::info!("│ Node Id        : {:<30} │", args.node_id);
+            log::info!("│ Data Dir       : {:<30} │", args.data_dir);
+            log::info!("│ Initialized    : {:<30} │", is_initialized);
+            log::info!("└─────────────────────────────────────────────────┘");
+        }
+        Mode::Cluster => {
+            let app = get_app();
+            let is_initialized = app.raft.is_initialized().await?;
+            let leader = app
+                .raft
+                .current_leader()
+                .await
+                .map(|id| id.to_string())
+                .unwrap_or("No Leader".to_string());
+            let nodes_count = app
+                .raft
+                .metrics()
+                .borrow()
+                .clone()
+                .membership_config
+                .membership()
+                .nodes()
+                .count();
+            log::info!("┌─────────────────────────────────────────────────┐");
+            log::info!("│               CONREG CLUSTER MODE               │");
+            log::info!("├─────────────────────────────────────────────────┤");
+            log::info!("│ Address        : {:<30} │", args.address);
+            log::info!("│ Port           : {:<30} │", args.port);
+            log::info!("│ Node Id        : {:<30} │", args.node_id);
+            log::info!("│ Data Dir       : {:<30} │", args.data_dir);
+            log::info!("│ Initialized    : {:<30} │", is_initialized);
+            log::info!("│ Leader         : {:<30} │", leader);
+            log::info!("│ Nodes Count    : {:<30} │", nodes_count);
+            log::info!("└─────────────────────────────────────────────────┘");
+        }
+    }
+
+    Ok(())
 }

@@ -2,11 +2,9 @@ use crate::app::get_app;
 use crate::discovery::discovery::{HeartbeatResult, ServiceInstance};
 use crate::discovery::server::Service;
 use crate::protocol::res::Res;
-use dashmap::DashMap;
 use rocket::serde::json::Json;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::sync::Arc;
 
 pub fn routes() -> Vec<rocket::Route> {
     routes![

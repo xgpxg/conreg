@@ -152,7 +152,7 @@ where
             .request::<_, _, Infallible>("vote", req)
             .await
             .map_err(|e| {
-                log::error!("Vote error: {}", e);
+                log::error!("vte error: {}", e);
                 RPCError::from(e)
             })?;
         Ok(res.unwrap())

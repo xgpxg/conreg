@@ -279,6 +279,7 @@ impl Discovery {
         });
     }
 
+    #[allow(unused)]
     pub fn services(&self) -> DashMap<String, Vec<ServiceInstance>> {
         self.services.deref().clone()
     }

@@ -17,7 +17,7 @@ pub async fn vote(
     match get_app().raft.vote(req.into_inner()).await {
         Ok(response) => Ok(Json(Ok(response))),
         Err(e) => {
-            log::error!("Vote error: {}", e);
+            log::error!("vote error: {}", e);
             Err(Status::InternalServerError)
         }
     }
