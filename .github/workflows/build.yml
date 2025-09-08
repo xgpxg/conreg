@@ -11,10 +11,15 @@ env:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v4
-    - name: Build
-      run: cargo build -r --bin conreg-server --target x86_64-unknown-linux-musl
+      - uses: actions/checkout@v4
+      - name: Build
+        run: cargo build -r --bin conreg-server --target x86_64-unknown-linux-musl
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: conreg-server
+          path: target/x86_64-unknown-linux-musl/release/conreg-server
+          retention-days: 5
+          overwrite: 'true'
