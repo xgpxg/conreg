@@ -458,6 +458,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "conreg-cms"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "conreg-server"
 version = "0.1.0"
 dependencies = [

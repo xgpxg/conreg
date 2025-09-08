@@ -1,4 +1,6 @@
 use crate::app::get_app;
+use crate::handle_raft_error;
+use crate::protocol::res::Res;
 use crate::raft::RaftRequest;
 use crate::raft::api::{ForwardRequest, forward_request_to_leader};
 use crate::raft::declare_types::ClientWriteResponse;
@@ -16,38 +18,13 @@ pub async fn write(req: Json<RaftRequest>) -> Result<Json<ClientWriteResponse>, 
     match get_app().raft.client_write(req.0.clone()).await {
         Ok(response) => Ok(Json(response)),
         Err(err) => {
-            match err {
-                RaftError::APIError(err) => match err {
-                    // 节点不是leader，Raft会返回一个需要转发到Leader的错误，需要手动处理下
-                    ClientWriteError::ForwardToLeader(fl) => {
-                        return match fl.leader_node {
-                            Some(node) => {
-                                log::debug!(
-                                    "forward to leader {}, leader address: {}",
-                                    fl.leader_id.unwrap(),
-                                    node.addr
-                                );
-                                forward_request_to_leader(
-                                    &node.addr,
-                                    ForwardRequest::RaftRequest(req.0),
-                                )
-                                .await
-                            }
-                            None => {
-                                log::error!("forward to leader error: no leader");
-                                Err(Status::InternalServerError)
-                            }
-                        };
-                    }
-                    ClientWriteError::ChangeMembershipError(e) => {
-                        log::error!("error when change membership: {:?}", e);
-                    }
-                },
-                RaftError::Fatal(e) => {
-                    log::error!("error when write: {:?}", e);
-                }
+            let res: Res<ClientWriteResponse> =
+                handle_raft_error!(err, ForwardRequest::RaftRequest(req.0));
+            if res.is_success() {
+                Ok(Json(res.data.unwrap()))
+            } else {
+                Err(Status::InternalServerError)
             }
-            Err(Status::InternalServerError)
         }
     }
 }

@@ -1,4 +1,6 @@
 use crate::app::get_app;
+use crate::handle_raft_error;
+use crate::protocol::res::Res;
 use crate::raft::api::{ForwardRequest, forward_request_to_leader};
 use crate::raft::declare_types::{Node, RaftMetrics};
 use crate::raft::{NodeId, TypeConfig};
@@ -18,9 +20,14 @@ use tracing::log;
 ///
 /// 示例：`curl -X POST http://127.0.0.1:8000/init -d []`
 #[post("/init", data = "<req>")]
-pub async fn init(req: Json<Vec<(NodeId, String)>>) -> Result<String, Status> {
-    let mut nodes = BTreeMap::new();
+pub async fn init(req: Json<Vec<(NodeId, String)>>) -> Res<String> {
     let app = get_app();
+    if app.raft.is_initialized().await.unwrap() {
+        return Res::success("Cluster already initialized, no need to reinitialize".to_string());
+    }
+    let mut nodes = BTreeMap::new();
+
+    // 没有传Nodes，初始化自己为Leader
     if req.0.is_empty() {
         nodes.insert(
             app.id,
@@ -34,10 +41,10 @@ pub async fn init(req: Json<Vec<(NodeId, String)>>) -> Result<String, Status> {
         }
     };
     match app.raft.initialize(nodes).await {
-        Ok(_) => Ok("Cluster initialization completed".to_string()),
+        Ok(_) => Res::success("Cluster initialization completed".to_string()),
         Err(e) => {
             log::error!("{}", e);
-            Err(Status::InternalServerError)
+            Res::error(&e.to_string())
         }
     }
 }
@@ -50,14 +57,14 @@ pub async fn init(req: Json<Vec<(NodeId, String)>>) -> Result<String, Status> {
 ///
 /// 示例：`curl -X POST http://localhost:8000/add-learner -d '[2,"127.0.0.1:8001"]'`
 #[post("/add-learner", data = "<req>")]
-pub async fn add_learner(
-    req: Json<(NodeId, String)>,
-) -> Result<Json<ClientWriteResponse<TypeConfig>>, Status> {
+pub async fn add_learner(req: Json<(NodeId, String)>) -> Res<ClientWriteResponse<TypeConfig>> {
     let (node_id, api_addr) = req.0;
-    let node = Node { addr: api_addr };
+    let node = Node {
+        addr: api_addr.clone(),
+    };
     match get_app().raft.add_learner(node_id, node, true).await {
-        Ok(response) => Ok(Json(response)),
-        Err(_) => Err(Status::InternalServerError),
+        Ok(response) => Res::success(response),
+        Err(e) => handle_raft_error!(e, ForwardRequest::AddLearner(node_id, api_addr)),
     }
 }
 
@@ -67,42 +74,10 @@ pub async fn add_learner(
 #[post("/change-membership", data = "<req>")]
 pub async fn change_membership(
     req: Json<BTreeSet<NodeId>>,
-) -> Result<Json<ClientWriteResponse<TypeConfig>>, Status> {
+) -> Res<ClientWriteResponse<TypeConfig>> {
     match get_app().raft.change_membership(req.0.clone(), false).await {
-        Ok(res) => Ok(Json(res)),
-        Err(e) => {
-            match e {
-                RaftError::APIError(err) => match err {
-                    ClientWriteError::ForwardToLeader(fl) => {
-                        return match fl.leader_node {
-                            Some(node) => {
-                                log::debug!(
-                                    "forward to leader {}, leader address: {}",
-                                    fl.leader_id.unwrap(),
-                                    node.addr
-                                );
-                                forward_request_to_leader(
-                                    &node.addr,
-                                    ForwardRequest::MembershipRequest(req.into_inner()),
-                                )
-                                .await
-                            }
-                            None => {
-                                log::error!("forward to leader error: no leader");
-                                Err(Status::InternalServerError)
-                            }
-                        };
-                    }
-                    ClientWriteError::ChangeMembershipError(e) => {
-                        log::error!("error when change membership: {:?}", e);
-                    }
-                },
-                RaftError::Fatal(e) => {
-                    log::error!("error when write: {:?}", e);
-                }
-            }
-            Err(Status::InternalServerError)
-        }
+        Ok(res) => Res::success(res),
+        Err(e) => handle_raft_error!(e, ForwardRequest::MembershipRequest(req.into_inner())),
     }
 }
 
@@ -110,7 +85,7 @@ pub async fn change_membership(
 ///
 /// 示例：`curl -X GET http://localhost:8000/metrics`
 #[get("/metrics")]
-pub async fn metrics() -> Result<Json<RaftMetrics>, Status> {
+pub async fn metrics() -> Res<RaftMetrics> {
     let metrics = get_app().raft.metrics().borrow().clone();
-    Ok(Json(metrics))
+    Res::success(metrics)
 }
