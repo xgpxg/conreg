@@ -2,6 +2,10 @@
 name = "conreg-cmt"
 version = "0.1.0"
 edition = "2024"
+description = "conreg-cmt is a management tool provided for conreg clusters, used for cluster creation, scaling up, and scaling down."
+license = "Apache-2.0"
+repository = "https://github.com/xgpxg/conreg"
+documentation = "https://docs.rs/conreg-cmt"
 
 [dependencies]
 clap = "4.5.46"
