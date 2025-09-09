@@ -413,7 +413,7 @@ mod tests {
             )
             .discovery(
                 DiscoveryConfigBuilder::default()
-                    .server_addr(vec!["127.0.0.1:8000","127.0.0.1:8001"])
+                    .server_addr(vec!["127.0.0.1:8000", "127.0.0.1:8001"])
                     .build()
                     .unwrap(),
             )

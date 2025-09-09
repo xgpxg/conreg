@@ -308,22 +308,36 @@ impl ConfigManager {
         namespace_id: &str,
         page_num: i32,
         page_size: i32,
+        filter_text: Option<String>,
     ) -> anyhow::Result<(u64, Vec<ConfigEntry>)> {
-        let total: u64 = sqlx::query_scalar("SELECT COUNT(1) FROM config WHERE namespace_id = ?")
-            .bind(namespace_id)
-            .fetch_one(DbPool::get())
-            .await?;
+        let mut query_sql = "SELECT * FROM config WHERE namespace_id = ?".to_string();
+        let mut count_sql = "SELECT COUNT(1) FROM config WHERE namespace_id = ?".to_string();
+
+        if let Some(filter) = filter_text.as_ref() {
+            if !filter.is_empty() {
+                query_sql.push_str(" AND (id LIKE ? OR content LIKE ?)");
+                count_sql.push_str(" AND (id LIKE ? OR content LIKE ?)");
+            }
+        }
+
+        query_sql.push_str(" ORDER BY id_ DESC LIMIT ?, ?");
+
+        let mut query = sqlx::query_as(&query_sql).bind(namespace_id);
+        let mut count_query = sqlx::query_scalar(&count_sql).bind(namespace_id);
+
+        if let Some(filter) = filter_text {
+            if !filter.is_empty() {
+                let filter_pattern = format!("%{}%", filter);
+                query = query.bind(filter_pattern.clone()).bind(filter_pattern.clone());
+                count_query = count_query.bind(filter_pattern.clone()).bind(filter_pattern.clone());
+            }
+        }
 
         let offset = (page_num - 1) * page_size;
+        query = query.bind(offset).bind(page_size);
 
-        let rows: Vec<ConfigEntry> = sqlx::query_as(
-            "SELECT * FROM config WHERE namespace_id = ? ORDER BY id_ DESC LIMIT ?, ?",
-        )
-        .bind(namespace_id)
-        .bind(offset)
-        .bind(page_size)
-        .fetch_all(DbPool::get())
-        .await?;
+        let total: u64 = count_query.fetch_one(DbPool::get()).await?;
+        let rows: Vec<ConfigEntry> = query.fetch_all(DbPool::get()).await?;
 
         Ok((total, rows))
     }

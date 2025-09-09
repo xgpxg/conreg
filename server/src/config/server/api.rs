@@ -1,9 +1,9 @@
 use crate::app::get_app;
 use crate::config::server::ConfigEntry;
 use crate::protocol::res::{PageRes, Res};
-use tracing::log;
 use rocket::serde::json::Json;
 use serde::{Deserialize, Serialize};
+use tracing::log;
 
 pub fn routes() -> Vec<rocket::Route> {
     routes![upsert, get, delete, recover, list, list_history, watch]
@@ -88,12 +88,17 @@ async fn recover(req: Json<RecoverConfigReq>) -> Res<()> {
 }
 
 /// 获取配置列表
-#[get("/list?<namespace_id>&<page_num>&<page_size>")]
-async fn list(namespace_id: &str, page_num: i32, page_size: i32) -> Res<PageRes<ConfigEntry>> {
+#[get("/list?<namespace_id>&<page_num>&<page_size>&<filter_text>")]
+async fn list(
+    namespace_id: &str,
+    page_num: i32,
+    page_size: i32,
+    filter_text: Option<String>,
+) -> Res<PageRes<ConfigEntry>> {
     match get_app()
         .config_app
         .manager
-        .list_configs_with_page(namespace_id, page_num, page_size)
+        .list_configs_with_page(namespace_id, page_num, page_size, filter_text)
         .await
     {
         Ok(res) => Res::success(PageRes {

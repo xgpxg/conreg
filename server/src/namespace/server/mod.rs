@@ -158,7 +158,7 @@ impl NamespaceManager {
         page_num: i32,
         page_size: i32,
     ) -> anyhow::Result<(u64, Vec<Namespace>)> {
-        let total: u64 = sqlx::query_scalar("SELECT COUNT(1) FROM config")
+        let total: u64 = sqlx::query_scalar("SELECT COUNT(1) FROM namespace")
             .fetch_one(DbPool::get())
             .await?;
 
