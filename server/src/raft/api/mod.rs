@@ -2,13 +2,12 @@ use crate::protocol::res::Res;
 use crate::raft::declare_types::ClientWriteResponse;
 use crate::raft::{NodeId, RaftRequest};
 use rocket::http::Status;
-use rocket::serde::json::Json;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 use tracing::log;
 
 mod app;
-mod manage;
+mod cluster;
 mod raft;
 
 pub fn routes() -> Vec<rocket::Route> {
@@ -16,10 +15,10 @@ pub fn routes() -> Vec<rocket::Route> {
         raft::vote,
         raft::append,
         raft::snapshot,
-        manage::init,
-        manage::metrics,
-        manage::change_membership,
-        manage::add_learner,
+        cluster::init,
+        cluster::metrics,
+        cluster::change_membership,
+        cluster::add_learner,
         app::read,
         app::write,
     ]
@@ -33,29 +32,36 @@ enum ForwardRequest {
     MembershipRequest(BTreeSet<NodeId>),
 }
 
+impl ForwardRequest {
+    fn to_forward_url(&self, leader_addr: &str) -> String {
+        match self {
+            ForwardRequest::RaftRequest(_) => {
+                format!("http://{}/cluster/write", leader_addr)
+            }
+            ForwardRequest::AddLearner(_, _) => {
+                format!("http://{}/cluster/add-learner", leader_addr)
+            }
+            ForwardRequest::MembershipRequest(_) => {
+                format!("http://{}/cluster/change-membership", leader_addr)
+            }
+        }
+    }
+}
+
 async fn forward_request_to_leader(
     leader_addr: &str,
     request: ForwardRequest,
 ) -> Result<ClientWriteResponse, Status> {
     let client = reqwest::Client::new();
 
-    let forward_url = match &request {
-        ForwardRequest::RaftRequest(_) => {
-            format!("http://{}/write", leader_addr)
-        }
-        ForwardRequest::MembershipRequest(_) => {
-            format!("http://{}/change-membership", leader_addr)
-        }
-        ForwardRequest::AddLearner(_, _) => {
-            format!("http://{}/add-learner", leader_addr)
-        }
-    };
+    let forward_url = request.to_forward_url(leader_addr);
     match client.post(&forward_url).json(&request).send().await {
         Ok(response) => match response.json::<Res<ClientWriteResponse>>().await {
             Ok(result) => {
                 if result.is_success() {
                     Ok(result.data.unwrap())
                 } else {
+                    log::error!("when forward to {}, error: {}", forward_url, result.msg);
                     Err(Status::InternalServerError)
                 }
             }
@@ -71,6 +77,7 @@ async fn forward_request_to_leader(
     }
 }
 
+// 处理Raft的API错误，当返回ForwardToLeader时，转发到Leader节点处理
 #[macro_export]
 macro_rules! handle_raft_error {
     ($e:expr, $forward_request:expr) => {{

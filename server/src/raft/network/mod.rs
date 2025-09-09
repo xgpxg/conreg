@@ -70,7 +70,7 @@ where
         Resp: Serialize + DeserializeOwned,
         Err: std::error::Error + Serialize + DeserializeOwned,
     {
-        let url = format!("http://{}/{}", self.addr, uri);
+        let url = format!("http://{}/cluster/{}", self.addr, uri);
         log::debug!(
             "network send request to {}",
             url,

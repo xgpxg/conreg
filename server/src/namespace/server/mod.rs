@@ -3,6 +3,7 @@ pub mod api;
 use crate::Args;
 use crate::db::DbPool;
 use crate::raft::RaftRequest;
+use anyhow::bail;
 use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
@@ -107,6 +108,9 @@ impl NamespaceManager {
     }
 
     pub async fn delete_namespace_and_sync(&self, id: &str) -> anyhow::Result<()> {
+        if id == "public" {
+            bail!("public is the system's default reserved namespace and cannot be deleted.");
+        }
         self.sync(RaftRequest::DeleteNamespace { id: id.to_string() })
             .await?;
         Ok(())
@@ -128,7 +132,7 @@ impl NamespaceManager {
     async fn sync(&self, request: RaftRequest) -> anyhow::Result<()> {
         log::info!("sync namespace request: {:?}", request);
         self.http_client
-            .post(format!("http://127.0.0.1:{}/write", self.args.port))
+            .post(format!("http://127.0.0.1:{}/cluster/write", self.args.port))
             .json(&request)
             .send()
             .await?;

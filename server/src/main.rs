@@ -90,7 +90,7 @@ async fn start_http_server(args: &Args) -> anyhow::Result<()> {
         ..Config::debug_default()
     });
 
-    builder = builder.mount("/", raft::api::routes());
+    builder = builder.mount("/cluster", raft::api::routes());
     builder = builder.mount("/config", config::server::api::routes());
     builder = builder.mount("/namespace", namespace::server::api::routes());
     builder = builder.mount("/discovery", discovery::server::api::routes());

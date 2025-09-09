@@ -294,7 +294,7 @@ impl ConfigManager {
     async fn sync(&self, request: RaftRequest) -> anyhow::Result<()> {
         log::info!("sync config request: {:?}", request);
         self.http_client
-            .post(format!("http://127.0.0.1:{}/write", self.args.port))
+            .post(format!("http://127.0.0.1:{}/cluster/write", self.args.port))
             .json(&request)
             .send()
             .await?;
@@ -363,6 +363,7 @@ impl ConfigManager {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::Mode;
     #[tokio::test]
     async fn test_config() {
         let args = Args {
@@ -370,6 +371,7 @@ mod tests {
             port: 8000,
             data_dir: "./data".to_string(),
             node_id: 1,
+            mode: Mode::Standalone,
         };
         let cm = ConfigManager::new(&args).await.unwrap();
         let config = cm.get_config("public", "test").await.unwrap();
