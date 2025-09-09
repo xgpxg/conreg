@@ -1,67 +1,65 @@
 # Conreg
 
-使用Rust实现的配置和注册中心，参考了Nacos设计，集配置与服务发现于一体，简单易用，支持集群部署，CP模式，使用Raft保证数据一致性。
+Configuration and registry center implemented in Rust, referencing the design of Nacos, integrating configuration and
+service discovery into one, simple and easy to use, supporting cluster deployment, CP mode, using Raft to ensure data
+consistency.
 
-配置中心：
+Configuration Center:
 
-- [x] 命名空间隔离
-- [x] 配置增删改查
-- [x] 一致性同步（Raft）
-- [x] 配置历史记录
-- [x] 配置恢复
-- [ ] 导入/导出配置
+- [x] Namespace isolation
+- [x] Configuration CRUD operations
+- [x] Consistency synchronization (Raft)
+- [x] Configuration history records
+- [x] Configuration recovery
+- [ ] Configuration import/export
 - [ ] Web UI
-
-注册中心：
-
-- [x] 命名空间隔离
-- [x] 服务注册
-- [x] 心跳检测
-- [ ] 服务发现
+  Registry Center:
+- [x] Namespace isolation
+- [x] Service registration
+- [x] Heartbeat detection
+- [ ] Service discovery
 - [ ] Web UI
+  Security:
+- [ ] Login verification
+- [ ] OpenAPI authentication
 
-安全：
+Client SDK（[conreg-client](https://docs.rs/conreg-client)）：
 
-- [ ] 登录校验
-- [ ] OpenAPI鉴权
+- [x] Configuration retrieval
+- [x] Service registration
+- [x] Service discovery
+- [ ] Load balancing
 
-客户端SDK（[conreg-client](https://docs.rs/conreg-client)）：
+Cluster Management Tool:
 
-- [x] 配置获取
-- [x] 服务注册
-- [x] 服务发现
-- [ ] 负载均衡
+[x] Cluster initialization
+[x] Cluster scaling out
+[x] Cluster scaling in
+[x] Raft status monitoring
+[ ] Cluster upgrade
+[ ] Cluster backup
 
-集群管理工具：
-
-- [x] 集群初始化
-- [x] 集群扩容
-- [x] 集群缩容
-- [x] Raft状态监控
-- [ ] 集群升级
-- [ ] 集群备份
-
-# 整体架构
+# Overall Architecture
 
 <img alt="architecture" src="docs/architecture.png" width="500px"/>
 
 # Conreg Server
 
-## 单机部署
+## Standalone Deployment
 
-- 启动
+- Startup
 
 ```shell
 conreg-server -p 8000
 ```
 
-## 集群部署
+## Cluster Deployment
 
-单节点
+Single Node
 
-- 手动部署
+- Manual Deployment
 
-启动多个节点：
+Start multiple nodes:
 
 ```shell
 conreg-server -p 8001 -d ./data1 -m cluster -n 1
@@ -69,15 +67,15 @@ conreg-server -p 8002 -d ./data2 -m cluster -n 2
 conreg-server -p 8003 -d ./data3 -m cluster -n 3
 ```
 
-初始化：
+Initialization:
 
 ```shell
 curl -X POST http://127.0.0.1:8001/init -d [[1,"127.0.0.1:8000"],[2,"127.0.0.1:8001"],[3,"127.0.0.1:8002"]]
 ```
 
-- 使用集群管理工具
-
-提供了一个集群管理的CLI工具，用于集群创建、扩容和缩容：[conreg-cmt](https://crates.io/crates/conreg-cmt)
+- Using Cluster Management Tool
+  A CLI tool for cluster management is provided for cluster creation, scaling, and scaling
+  in:[conreg-cmt](https://crates.io/crates/conreg-cmt)
 
 ```shell
 Usage: conreg-cmt --server <SERVER> <COMMAND>
