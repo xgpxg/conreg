@@ -34,12 +34,12 @@ Client SDK（[conreg-client](https://docs.rs/conreg-client)）：
 
 Cluster Management Tool:
 
-[x] Cluster initialization
-[x] Cluster scaling out
-[x] Cluster scaling in
-[x] Raft status monitoring
-[ ] Cluster upgrade
-[ ] Cluster backup
+- [x] Cluster initialization
+- [x] Cluster scaling out
+- [x] Cluster scaling in
+- [x] Raft status monitoring
+- [ ] Cluster upgrade
+- [ ] Cluster backup
 
 # Overall Architecture
 
