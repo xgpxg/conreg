@@ -12,7 +12,7 @@ use tracing::log;
 /// 命名空间
 #[derive(sqlx::FromRow, Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Namespace {
-    /// 命名空间ID，默认为16位随机字符
+    /// 命名空间ID
     pub id: String,
     /// 命名空间名称
     pub name: String,
@@ -84,6 +84,7 @@ impl NamespaceManager {
         }
         Ok(())
     }
+
     async fn insert_namespace(&self, namespace: &Namespace) -> anyhow::Result<()> {
         sqlx::query("insert into namespace (id, name, description, create_time, update_time) values (?, ?, ?, ?, ?)")
             .bind(&namespace.id)

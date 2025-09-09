@@ -7,6 +7,7 @@ create table if not exists config
     create_time  timestamp    not null,
     update_time  timestamp    not null,
     description  varchar(500),
+    format       varchar(50)  not null,
     md5          varchar(32)  not null,
     unique (namespace_id, id)
 );

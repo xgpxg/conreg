@@ -27,6 +27,8 @@ pub struct ConfigEntry {
     pub update_time: DateTime<Local>,
     /// 描述
     pub description: Option<String>,
+    /// 配置格式
+    pub format: String,
     /// md5
     pub md5: String,
 }
@@ -91,6 +93,7 @@ impl ConfigManager {
         config_id: &str,
         content: &str,
         description: Option<String>,
+        format: &str,
     ) -> anyhow::Result<()> {
         // 旧配置
         let config = self.get_config(namespace_id, config_id).await?;
@@ -113,6 +116,7 @@ impl ConfigManager {
                     update_time: Local::now(),
                     description,
                     md5,
+                    format: format.to_string(),
                 };
                 // 同步数据
                 self.sync(RaftRequest::SetConfig { entry }).await?;
@@ -127,6 +131,7 @@ impl ConfigManager {
                     update_time: Local::now(),
                     description,
                     md5,
+                    format: format.to_string(),
                 };
                 // 同步数据
                 self.sync(RaftRequest::UpdateConfig { entry }).await?;
@@ -141,13 +146,14 @@ impl ConfigManager {
     /// 注意：该方法不应该直接调用，而需要由raft apply log时调用，以保证数据一致性
     pub async fn insert_config(&self, entry: ConfigEntry) -> anyhow::Result<()> {
         sqlx::query(
-            "INSERT INTO config (id_, namespace_id, id, content, description, create_time, update_time, md5) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO config (id_, namespace_id, id, content, description,format, create_time, update_time, md5) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
             .bind(&entry.id_)
             .bind(&entry.namespace_id)
             .bind(&entry.id)
             .bind(&entry.content)
             .bind(&entry.description)
+            .bind(&entry.format)
             .bind(&entry.create_time)
             .bind(&entry.update_time)
             .bind(&entry.md5)
@@ -167,11 +173,12 @@ impl ConfigManager {
     /// 注意：该方法不应该直接调用，而需要由raft apply log时调用，以保证数据一致性
     pub async fn update_config(&self, entry: ConfigEntry) -> anyhow::Result<()> {
         sqlx::query(
-            "UPDATE config SET content = ?, description = ?, update_time = ?, md5 = ? WHERE id_ = ?",
+            "UPDATE config SET content = ?, description = ?, update_time = ?, format = ?, md5 = ? WHERE id_ = ?",
         )
         .bind(&entry.content)
         .bind(&entry.description)
         .bind(&entry.update_time)
+        .bind(&entry.format)
         .bind(&entry.md5)
         .bind(&entry.id_)
         .execute(DbPool::get())
@@ -283,6 +290,7 @@ impl ConfigManager {
             &history.id,
             &history.content,
             history.description,
+            &history.format,
         )
         .await?;
 
@@ -328,8 +336,12 @@ impl ConfigManager {
         if let Some(filter) = filter_text {
             if !filter.is_empty() {
                 let filter_pattern = format!("%{}%", filter);
-                query = query.bind(filter_pattern.clone()).bind(filter_pattern.clone());
-                count_query = count_query.bind(filter_pattern.clone()).bind(filter_pattern.clone());
+                query = query
+                    .bind(filter_pattern.clone())
+                    .bind(filter_pattern.clone());
+                count_query = count_query
+                    .bind(filter_pattern.clone())
+                    .bind(filter_pattern.clone());
             }
         }
 
@@ -400,6 +412,7 @@ mod tests {
             update_time: Local::now(),
             description: None,
             md5: "".to_string(),
+            format: "yaml".to_string(),
         };
         cm.insert_config(entry.clone()).await.unwrap();
 

@@ -16,6 +16,7 @@ struct UpsertConfigReq {
     id: String,
     content: String,
     description: Option<String>,
+    format: String,
 }
 
 /// 删除配置
@@ -42,6 +43,7 @@ async fn upsert(req: Json<UpsertConfigReq>) -> Res<()> {
             &req.id,
             &req.content,
             req.description.clone(),
+            &req.format,
         )
         .await
     {
