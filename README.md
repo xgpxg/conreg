@@ -13,7 +13,9 @@ Configuration Center:
 - [x] Configuration recovery
 - [ ] Configuration import/export
 - [ ] Web UI
-  Registry Center:
+
+Registry Center:
+
 - [x] Namespace isolation
 - [x] Service registration
 - [x] Heartbeat detection
