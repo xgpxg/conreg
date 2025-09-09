@@ -5,7 +5,6 @@ use crate::raft::RaftRequest;
 use crate::raft::api::{ForwardRequest, forward_request_to_leader};
 use crate::raft::declare_types::ClientWriteResponse;
 use openraft::error::{ClientWriteError, RaftError};
-use rocket::http::Status;
 use rocket::post;
 use rocket::serde::json::Json;
 use tracing::log;
@@ -14,17 +13,13 @@ use tracing::log;
 ///
 /// 仅当集群中超过半数节点存活时，才会写入成功，否则会阻塞，直到有超过半数的可用节点。
 #[post("/write", data = "<req>")]
-pub async fn write(req: Json<RaftRequest>) -> Result<Json<ClientWriteResponse>, Status> {
+pub async fn write(req: Json<RaftRequest>) -> Res<ClientWriteResponse> {
     match get_app().raft.client_write(req.0.clone()).await {
-        Ok(response) => Ok(Json(response)),
+        Ok(response) => Res::success(response),
         Err(err) => {
             let res: Res<ClientWriteResponse> =
                 handle_raft_error!(err, ForwardRequest::RaftRequest(req.0));
-            if res.is_success() {
-                Ok(Json(res.data.unwrap()))
-            } else {
-                Err(Status::InternalServerError)
-            }
+            res
         }
     }
 }
@@ -37,10 +32,10 @@ pub async fn write(req: Json<RaftRequest>) -> Result<Json<ClientWriteResponse>, 
 /// 如果不是Leader节点，该方法会返回Err，需要转发到Leader节点。
 /// 这样读写都在Leader节点上，可能性能会有损失。
 #[get("/read?<key>")]
-pub async fn read(key: &str) -> Json<Option<String>> {
+pub async fn read(key: &str) -> Res<Option<String>> {
     let state_machine = &get_app().state_machine;
     match state_machine.read().await.data.get(key).cloned() {
-        Some(value) => Json(Some(value)),
-        None => Json(None),
+        Some(value) => Res::success(Some(value)),
+        None => Res::success(None),
     }
 }

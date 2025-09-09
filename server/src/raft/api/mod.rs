@@ -66,7 +66,11 @@ async fn forward_request_to_leader(
                 }
             }
             Err(e) => {
-                log::error!("Failed to parse forwarded response: {}", e);
+                log::error!(
+                    "Failed to parse forwarded response, url: {}, error: {}",
+                    forward_url,
+                    e
+                );
                 Err(Status::InternalServerError)
             }
         },

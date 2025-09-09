@@ -21,8 +21,14 @@ pub struct Service {
     namespace_id: String,
     meta: HashMap<String, String>,
     create_time: DateTime<Local>,
+    state: State,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+struct State {
     /// 实例数量，包含所有状态的
     total_instances: usize,
+    up_instances: usize,
 }
 impl sqlx::FromRow<'_, SqliteRow> for Service {
     fn from_row(row: &SqliteRow) -> Result<Self, sqlx::Error> {
@@ -36,7 +42,7 @@ impl sqlx::FromRow<'_, SqliteRow> for Service {
             namespace_id: row.try_get("namespace_id")?,
             meta,
             create_time: row.try_get("create_time")?,
-            total_instances: 0,
+            state: State::default(),
         })
     }
 }
@@ -174,7 +180,7 @@ impl DiscoveryManager {
                 namespace_id: namespace_id.to_string(),
                 meta,
                 create_time: Local::now(),
-                total_instances: 0,
+                state: State::default(),
             },
         })
         .await?;
@@ -197,21 +203,42 @@ impl DiscoveryManager {
     }
 
     /// 获取服务列表
-    pub async fn list_services(&self, namespace_id: &str) -> anyhow::Result<Vec<Service>> {
-        let mut list: Vec<Service> = sqlx::query_as("select * from service where namespace_id = ?")
+    pub async fn list_services(
+        &self,
+        namespace_id: &str,
+        page_num: i32,
+        page_size: i32,
+    ) -> anyhow::Result<(u64, Vec<Service>)> {
+        let total: u64 = sqlx::query_scalar("SELECT COUNT(1) FROM service WHERE namespace_id = ?")
             .bind(namespace_id)
-            .fetch_all(DbPool::get())
+            .fetch_one(DbPool::get())
             .await?;
-        for service in list.iter_mut() {
-            let total_instances = match self.discoveries.get(namespace_id) {
-                Some(discovery) => discovery
-                    .get_service_instances(service.service_id.as_str())?
-                    .len(),
-                None => 0,
+        let offset = (page_num - 1) * page_size;
+
+        let mut rows: Vec<Service> = sqlx::query_as(
+            "SELECT * FROM service WHERE namespace_id = ? ORDER BY create_time DESC LIMIT ?, ?",
+        )
+        .bind(namespace_id)
+        .bind(offset)
+        .bind(page_size)
+        .fetch_all(DbPool::get())
+        .await?;
+        for service in rows.iter_mut() {
+            let mut state = State::default();
+            match self.discoveries.get(namespace_id) {
+                Some(discovery) => {
+                    state.total_instances = discovery
+                        .get_service_instances(service.service_id.as_str())?
+                        .len();
+                    state.up_instances = discovery
+                        .get_available_service_instances(service.service_id.as_str())?
+                        .len();
+                }
+                None => {}
             };
-            service.total_instances = total_instances;
+            service.state = state;
         }
-        Ok(list)
+        Ok((total, rows))
     }
 
     /// 注销服务，并同步到集群

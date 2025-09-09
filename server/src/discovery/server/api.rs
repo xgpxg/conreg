@@ -1,7 +1,7 @@
 use crate::app::get_app;
 use crate::discovery::discovery::{HeartbeatResult, ServiceInstance};
 use crate::discovery::server::Service;
-use crate::protocol::res::Res;
+use crate::protocol::res::{PageRes, Res};
 use rocket::serde::json::Json;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -96,15 +96,20 @@ async fn deregister_service(req: Json<DeregisterServiceReq>) -> Res<()> {
 /// 获取服务列表
 ///
 /// 该接口仅在后台调用
-#[get("/service/list?<namespace_id>")]
-async fn list_service(namespace_id: &str) -> Res<Vec<Service>> {
+#[get("/service/list?<namespace_id>&<page_num>&<page_size>")]
+async fn list_service(namespace_id: &str, page_num: i32, page_size: i32) -> Res<PageRes<Service>> {
     match get_app()
         .discovery_app
         .manager
-        .list_services(namespace_id)
+        .list_services(namespace_id, page_num, page_size)
         .await
     {
-        Ok(res) => Res::success(res),
+        Ok(res) => Res::success(PageRes {
+            page_num,
+            page_size,
+            total: res.0,
+            list: res.1,
+        }),
         Err(e) => Res::error(&e.to_string()),
     }
 }
