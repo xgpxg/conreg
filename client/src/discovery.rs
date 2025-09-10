@@ -51,7 +51,7 @@ impl DiscoveryClient {
                 req,
             )
             .await?;
-        log::info!("register instance with service id: {:?}", self.service_id);
+        log::info!("register instance with service id: {}", self.service_id);
         Ok(instance)
     }
 

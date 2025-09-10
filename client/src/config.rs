@@ -106,6 +106,8 @@ impl ConfigClient {
                     }
                     Err(e) => {
                         log::error!("watch config changes error: {}", e.to_string());
+                        // when some error, sleep 0.5s and retry
+                        tokio::time::sleep(Duration::from_millis(500)).await;
                     }
                 };
             }
@@ -239,7 +241,6 @@ impl Configs {
     pub fn contains(&self, key: &str) -> bool {
         self.configs.contains_key(key)
     }
-
 }
 
 #[cfg(test)]

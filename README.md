@@ -1,7 +1,7 @@
 # Conreg
 
 Configuration and registry center implemented in Rust, referencing the design of Nacos, integrating configuration and
-service discovery into one, simple and easy to use, supporting cluster deployment, CP mode, using Raft to ensure data
+service discovery into one, simple and easy to use, supporting cluster deployment, using Raft to ensure data
 consistency.
 
 Configuration Center:
@@ -12,7 +12,6 @@ Configuration Center:
 - [x] Configuration history records
 - [x] Configuration recovery
 - [ ] Configuration import/export
-- [ ] Web UI
 
 Registry Center:
 
@@ -20,8 +19,10 @@ Registry Center:
 - [x] Service registration
 - [x] Heartbeat detection
 - [ ] Service discovery
-- [ ] Web UI
-  Security:
+- [x] Instance metadata
+
+Security:
+
 - [ ] Login verification
 - [ ] OpenAPI authentication
 
@@ -40,6 +41,11 @@ Cluster Management Tool:
 - [x] Raft status monitoring
 - [ ] Cluster upgrade
 - [ ] Cluster backup
+
+Web UI:
+
+- [x] Basic UI
+- Embedding and Integration
 
 # Overall Architecture
 

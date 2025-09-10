@@ -425,6 +425,7 @@ mod tests {
         // init_with(config).await;
         let h = tokio::spawn(async move {
             loop {
+                println!("{:?}", AppConfig::get::<String>("name"));
                 let instances = AppDiscovery::get_instances(utils::current_process_name().as_str()).await.unwrap();
                 println!("current: {:?}", instances);
                 tokio::time::sleep(std::time::Duration::from_secs(1)).await;
