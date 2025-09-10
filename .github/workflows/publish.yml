@@ -12,16 +12,51 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      # 安装 Node
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      # 安装 musl 工具
       - name: Install musl tools
         run: sudo apt-get update && sudo apt-get install -y musl-tools
+
+      # 添加 musl 目标
       - name: Add musl target
         run: rustup target add x86_64-unknown-linux-musl
+
+      # 克隆前端代码
+      - name: Checkout frontend code
+        run: |
+          git clone https://github.com/xgpxg/conreg-ui.git
+
+      # 设置前端环境变量并构建
+      - name: Build frontend
+        run: |
+          cd conreg-ui
+          sed -i "s/^VITE_VERSION=.*/VITE_VERSION=${{ github.ref_name }}/" .env.production
+          npm install
+          npm run build
+
+      # 创建 web 目录并复制前端构建文件
+      - name: Copy frontend build to web directory
+        run: |
+          mkdir -p web
+          cp -r conreg-ui/dist/* web/
+
+      # 构建后端服务
       - name: Build
         run: cargo build -r --bin conreg-server --target x86_64-unknown-linux-musl
+
+      # 压缩二进制文件
       - name: Compress binary
         run: |
           cd target/x86_64-unknown-linux-musl/release
           tar -czf conreg-server.tar.gz conreg-server
+
+      # 创建 Release
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
