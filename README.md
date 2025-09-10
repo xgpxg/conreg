@@ -96,3 +96,7 @@ Options:
   -h, --help             Print help
   -V, --version          Print version
 ```
+
+# UI
+
+![img.png](docs/ui.png)
