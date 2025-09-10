@@ -42,5 +42,14 @@ create table if not exists service
     primary key (namespace_id, service_id)
 );
 
+create table if not exists user
+(
+    username varchar(100) primary key,
+    password varchar(100) not null
+);
+
 insert or ignore into namespace (id, name, description, create_time, update_time)
 values ('public', 'public', '保留空间', current_timestamp, current_timestamp);
+
+insert or ignore into user (username, password)
+values ('conreg', '$2b$12$d/WgXewqZpbUBOGgyGjzw.1XSO2OMHiDVJ9jaZ94vfuXsprG6Rcuu');

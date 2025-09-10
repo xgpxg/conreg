@@ -4,11 +4,14 @@ use crate::discovery::server::Service;
 use crate::namespace::server::Namespace;
 use serde::{Deserialize, Serialize};
 use std::io::Cursor;
+use serde_json::Value;
 
 pub mod api;
 mod declare_types;
 pub mod network;
 pub mod store;
+
+pub use api::raft_write as write;
 
 // 1. 定义客户端的请求和响应
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -46,12 +49,14 @@ pub enum RaftRequest {
         service_id: String,
         instance_id: String,
     },
-    /// 心跳
+    /// 服务实例心跳
     Heartbeat {
         namespace_id: String,
         service_id: String,
         instance_id: String,
     },
+    /// 缓存写入
+    CacheWrite { key: String, value: Value, ttl: Option<u64> },
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct RaftResponse {

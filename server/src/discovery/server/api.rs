@@ -1,4 +1,5 @@
 use crate::app::get_app;
+use crate::auth::UserPrincipal;
 use crate::discovery::discovery::{HeartbeatResult, ServiceInstance};
 use crate::discovery::server::Service;
 use crate::protocol::res::{PageRes, Res};
@@ -64,7 +65,7 @@ struct HeartbeatReq {
 ///
 /// 该接口仅后台调用
 #[post("/service/register", data = "<req>")]
-async fn register_service(req: Json<RegisterServiceReq>) -> Res<()> {
+async fn register_service(req: Json<RegisterServiceReq>, _user: UserPrincipal) -> Res<()> {
     match get_app()
         .discovery_app
         .manager
@@ -81,7 +82,7 @@ async fn register_service(req: Json<RegisterServiceReq>) -> Res<()> {
 /// 删除服务以及服务下的所有实例
 /// 该接口仅在后台调用
 #[post("/service/deregister", data = "<req>")]
-async fn deregister_service(req: Json<DeregisterServiceReq>) -> Res<()> {
+async fn deregister_service(req: Json<DeregisterServiceReq>, _user: UserPrincipal) -> Res<()> {
     match get_app()
         .discovery_app
         .manager
@@ -97,7 +98,12 @@ async fn deregister_service(req: Json<DeregisterServiceReq>) -> Res<()> {
 ///
 /// 该接口仅在后台调用
 #[get("/service/list?<namespace_id>&<page_num>&<page_size>")]
-async fn list_service(namespace_id: &str, page_num: i32, page_size: i32) -> Res<PageRes<Service>> {
+async fn list_service(
+    namespace_id: &str,
+    page_num: i32,
+    page_size: i32,
+    _user: UserPrincipal,
+) -> Res<PageRes<Service>> {
     match get_app()
         .discovery_app
         .manager
@@ -143,8 +149,14 @@ async fn deregister_instance(req: Json<DeregisterServiceInstanceReq>) -> Res<()>
 }
 
 /// 获取服务实例列表
+///
+/// 该接口仅在后台调用
 #[get("/instance/list?<namespace_id>&<service_id>")]
-async fn list_instances(namespace_id: &str, service_id: &str) -> Res<Vec<ServiceInstance>> {
+async fn list_instances(
+    namespace_id: &str,
+    service_id: &str,
+    _user: UserPrincipal,
+) -> Res<Vec<ServiceInstance>> {
     match get_app()
         .discovery_app
         .manager

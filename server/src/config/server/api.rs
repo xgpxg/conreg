@@ -1,4 +1,5 @@
 use crate::app::get_app;
+use crate::auth::UserPrincipal;
 use crate::config::server::ConfigEntry;
 use crate::protocol::res::{PageRes, Res};
 use rocket::serde::json::Json;
@@ -33,8 +34,10 @@ struct RecoverConfigReq {
 }
 
 /// 创建或更新配置
+///
+/// 该接口仅在后台调用
 #[post("/upsert", data = "<req>")]
-async fn upsert(req: Json<UpsertConfigReq>) -> Res<()> {
+async fn upsert(req: Json<UpsertConfigReq>, _user: UserPrincipal) -> Res<()> {
     match get_app()
         .config_app
         .manager
@@ -67,8 +70,10 @@ async fn get(namespace_id: &str, id: &str) -> Res<Option<ConfigEntry>> {
 }
 
 /// 删除配置
+///
+/// 该接口仅在后台调用
 #[post("/delete", data = "<req>")]
-async fn delete(req: Json<DeleteConfigReq>) -> Res<()> {
+async fn delete(req: Json<DeleteConfigReq>, _user: UserPrincipal) -> Res<()> {
     match get_app()
         .config_app
         .manager
@@ -81,21 +86,26 @@ async fn delete(req: Json<DeleteConfigReq>) -> Res<()> {
 }
 
 /// 恢复配置
+///
+/// 该接口仅在后台调用
 #[post("/recover", data = "<req>")]
-async fn recover(req: Json<RecoverConfigReq>) -> Res<()> {
+async fn recover(req: Json<RecoverConfigReq>, _user: UserPrincipal) -> Res<()> {
     match get_app().config_app.manager.recovery(req.id_).await {
         Ok(_) => Res::success(()),
         Err(e) => Res::error(&e.to_string()),
     }
 }
 
-/// 获取配置列表
+/// 获取配置列表（分页）
+///
+/// 该接口仅在后台调用
 #[get("/list?<namespace_id>&<page_num>&<page_size>&<filter_text>")]
 async fn list(
     namespace_id: &str,
     page_num: i32,
     page_size: i32,
     filter_text: Option<String>,
+    _user: UserPrincipal,
 ) -> Res<PageRes<ConfigEntry>> {
     match get_app()
         .config_app
@@ -114,12 +124,15 @@ async fn list(
 }
 
 /// 获取配置历史列表
+///
+/// 该接口仅在后台调用
 #[get("/histories?<namespace_id>&<id>&<page_num>&<page_size>")]
 async fn list_history(
     namespace_id: &str,
     id: &str,
     page_num: i32,
     page_size: i32,
+    _user: UserPrincipal,
 ) -> Res<PageRes<ConfigEntry>> {
     match get_app()
         .config_app

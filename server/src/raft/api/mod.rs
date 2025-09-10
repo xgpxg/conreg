@@ -10,6 +10,8 @@ mod app;
 mod cluster;
 mod raft;
 
+pub use app::raft_write;
+
 pub fn routes() -> Vec<rocket::Route> {
     routes![
         raft::vote,

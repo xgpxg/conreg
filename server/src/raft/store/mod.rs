@@ -109,7 +109,8 @@ impl StateMachineStore {
                 | RaftRequest::DeregisterService { .. }
                 | RaftRequest::RegisterServiceInstance { .. }
                 | RaftRequest::DeregisterServiceInstance { .. }
-                | RaftRequest::Heartbeat { .. }=> {
+                | RaftRequest::Heartbeat { .. }
+                | RaftRequest::CacheWrite { .. }=> {
                     match Event::RaftRequestEvent(req.clone()).send() {
                         Ok(_) => Ok(RaftResponse { value: None }),
                         Err(e) => {

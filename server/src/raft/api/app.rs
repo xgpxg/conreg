@@ -14,11 +14,15 @@ use tracing::log;
 /// 仅当集群中超过半数节点存活时，才会写入成功，否则会阻塞，直到有超过半数的可用节点。
 #[post("/write", data = "<req>")]
 pub async fn write(req: Json<RaftRequest>) -> Res<ClientWriteResponse> {
-    match get_app().raft.client_write(req.0.clone()).await {
+    raft_write(req.0).await
+}
+
+pub async fn raft_write(req: RaftRequest) -> Res<ClientWriteResponse> {
+    match get_app().raft.client_write(req.clone()).await {
         Ok(response) => Res::success(response),
         Err(err) => {
             let res: Res<ClientWriteResponse> =
-                handle_raft_error!(err, ForwardRequest::RaftRequest(req.0));
+                handle_raft_error!(err, ForwardRequest::RaftRequest(req));
             res
         }
     }

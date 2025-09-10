@@ -23,6 +23,9 @@ mod namespace;
 mod protocol;
 mod raft;
 
+mod auth;
+mod cache;
+mod system;
 #[cfg(not(debug_assertions))]
 mod web;
 
@@ -71,6 +74,9 @@ async fn main() -> anyhow::Result<()> {
     // 初始化数据库
     db::init(&args).await?;
 
+    // 初始化缓存
+    cache::init(&args)?;
+
     // 初始化app
     app::init().await?;
 
@@ -97,6 +103,7 @@ async fn start_http_server(args: &Args) -> anyhow::Result<()> {
     builder = builder.mount("/api/config", config::server::api::routes());
     builder = builder.mount("/api/namespace", namespace::server::api::routes());
     builder = builder.mount("/api/discovery", discovery::server::api::routes());
+    builder = builder.mount("/api/system", system::api::routes());
 
     // 前端
     #[cfg(not(debug_assertions))]

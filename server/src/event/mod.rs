@@ -1,4 +1,5 @@
 use crate::app::get_app;
+use crate::cache;
 use crate::raft::RaftRequest;
 use std::sync::LazyLock;
 use tokio::sync::mpsc;
@@ -194,6 +195,14 @@ impl EventHandler {
                         log::error!("Error processing Heartbeat request: {}", e);
                     }
                 };
+            }
+            RaftRequest::CacheWrite { key, value, ttl } => {
+                match cache::set(key, &value, ttl).await {
+                    Ok(_) => {}
+                    Err(e) => {
+                        log::error!("Error processing CacheWrite request: {}", e);
+                    }
+                }
             }
         }
     }
