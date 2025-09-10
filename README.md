@@ -78,7 +78,7 @@ conreg-server -p 8003 -d ./data3 -m cluster -n 3
 Initialization:
 
 ```shell
-curl -X POST http://127.0.0.1:8001/init -d [[1,"127.0.0.1:8000"],[2,"127.0.0.1:8001"],[3,"127.0.0.1:8002"]]
+curl -X POST http://127.0.0.1:8001/api/cluster/init -d [[1,"127.0.0.1:8000"],[2,"127.0.0.1:8001"],[3,"127.0.0.1:8002"]]
 ```
 
 - Using Cluster Management Tool

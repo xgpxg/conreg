@@ -23,6 +23,9 @@ mod namespace;
 mod protocol;
 mod raft;
 
+#[cfg(not(debug_assertions))]
+mod web;
+
 #[derive(Parser, Debug, Clone)]
 #[command(version, about, long_about = None)]
 pub struct Args {
@@ -90,10 +93,16 @@ async fn start_http_server(args: &Args) -> anyhow::Result<()> {
         ..Config::debug_default()
     });
 
-    builder = builder.mount("/cluster", raft::api::routes());
-    builder = builder.mount("/config", config::server::api::routes());
-    builder = builder.mount("/namespace", namespace::server::api::routes());
-    builder = builder.mount("/discovery", discovery::server::api::routes());
+    builder = builder.mount("/api/cluster", raft::api::routes());
+    builder = builder.mount("/api/config", config::server::api::routes());
+    builder = builder.mount("/api/namespace", namespace::server::api::routes());
+    builder = builder.mount("/api/discovery", discovery::server::api::routes());
+
+    // 前端
+    #[cfg(not(debug_assertions))]
+    {
+        builder = builder.mount("/", routes![web::web]);
+    }
 
     //builder = builder.manage(App::new(&args).await);
 

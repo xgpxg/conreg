@@ -1,6 +1,5 @@
 use std::fmt::Display;
 
-use tracing::log;
 use openraft::BasicNode;
 use openraft::RaftTypeConfig;
 use openraft::error::InstallSnapshotError;
@@ -23,6 +22,7 @@ use serde::de::DeserializeOwned;
 use tokio::io::AsyncRead;
 use tokio::io::AsyncSeek;
 use tokio::io::AsyncWrite;
+use tracing::log;
 
 pub struct NetworkFactory {}
 
@@ -70,7 +70,7 @@ where
         Resp: Serialize + DeserializeOwned,
         Err: std::error::Error + Serialize + DeserializeOwned,
     {
-        let url = format!("http://{}/cluster/{}", self.addr, uri);
+        let url = format!("http://{}/api/cluster/{}", self.addr, uri);
         log::debug!(
             "network send request to {}",
             url,

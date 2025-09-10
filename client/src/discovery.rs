@@ -47,7 +47,7 @@ impl DiscoveryClient {
                 &self
                     .config
                     .server_addr
-                    .build_url("/discovery/instance/register")?,
+                    .build_url("/api/discovery/instance/register")?,
                 req,
             )
             .await?;
@@ -67,7 +67,7 @@ impl DiscoveryClient {
             &self
                 .config
                 .server_addr
-                .build_url("/discovery/instance/available")?,
+                .build_url("/api/discovery/instance/available")?,
             req,
         )
         .await
@@ -86,7 +86,7 @@ impl DiscoveryClient {
             instance_id: self.client.gen_instance_id(),
         };
         HTTP.post::<HeartbeatResult>(
-            &self.config.server_addr.build_url("/discovery/heartbeat")?,
+            &self.config.server_addr.build_url("/api/discovery/heartbeat")?,
             req,
         )
         .await

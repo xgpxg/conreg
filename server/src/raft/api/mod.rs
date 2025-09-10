@@ -36,13 +36,13 @@ impl ForwardRequest {
     fn to_forward_url(&self, leader_addr: &str) -> String {
         match self {
             ForwardRequest::RaftRequest(_) => {
-                format!("http://{}/cluster/write", leader_addr)
+                format!("http://{}/api/cluster/write", leader_addr)
             }
             ForwardRequest::AddLearner(_, _) => {
-                format!("http://{}/cluster/add-learner", leader_addr)
+                format!("http://{}/api/cluster/add-learner", leader_addr)
             }
             ForwardRequest::MembershipRequest(_) => {
-                format!("http://{}/cluster/change-membership", leader_addr)
+                format!("http://{}/api/cluster/change-membership", leader_addr)
             }
         }
     }

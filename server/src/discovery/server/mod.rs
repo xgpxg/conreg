@@ -86,7 +86,7 @@ impl DiscoveryManager {
     async fn sync(&self, request: RaftRequest) -> anyhow::Result<()> {
         log::debug!("sync discovery request: {:?}", request);
         self.http_client
-            .post(format!("http://127.0.0.1:{}/cluster/write", self.args.port))
+            .post(format!("http://127.0.0.1:{}/api/cluster/write", self.args.port))
             .json(&request)
             .send()
             .await?;

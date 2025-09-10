@@ -47,7 +47,7 @@ impl ConfigClient {
         namespace: &str,
         config_id: &str,
     ) -> anyhow::Result<String> {
-        let url = server_addr.build_url("/config/get")?;
+        let url = server_addr.build_url("/api/config/get")?;
         let query = GetConfigReq {
             namespace_id: namespace.to_string(),
             id: config_id.to_string(),
@@ -74,7 +74,7 @@ impl ConfigClient {
             );
             let url = config_clone
                 .server_addr
-                .build_url("/config/watch")
+                .build_url("/api/config/watch")
                 .context("build url error from server addr")
                 .unwrap();
             let query = WatchConfigChangeReq {
@@ -132,11 +132,15 @@ impl ConfigClient {
                 log::debug!("starting fetch config");
                 let mut contents = vec![];
                 for id in config_clone.config_ids.iter() {
-                    contents.push(
-                        Self::fetch_config(&config_clone.server_addr, &config_clone.namespace, id)
-                            .await
-                            .unwrap(),
-                    );
+                    match Self::fetch_config(&config_clone.server_addr, &config_clone.namespace, id)
+                        .await
+                    {
+                        Ok(res) => contents.push(res),
+                        Err(e) => {
+                            log::error!("fetch config error: {}", e);
+                            tokio::time::sleep(Duration::from_millis(500)).await;
+                        }
+                    };
                 }
                 AppConfig::reload(Configs::from_contents(contents).unwrap());
                 log::debug!("config fetch success");

@@ -94,7 +94,7 @@ async fn main() -> anyhow::Result<()> {
 }
 
 fn build_url(server: &str, path: &str) -> String {
-    format!("http://{}/cluster{}", server, path)
+    format!("http://{}/api/cluster{}", server, path)
 }
 
 async fn init_cluster(server: &str, nodes: &Vec<(u64, String)>) -> anyhow::Result<()> {

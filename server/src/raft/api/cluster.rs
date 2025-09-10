@@ -17,7 +17,7 @@ use tracing::log;
 /// 当请求中没有传集群信息时，默认初始化当前接节点为单实例集群，
 /// 后续可通过`add_learner`添加
 ///
-/// 示例：`curl -X POST http://127.0.0.1:8000/init -d []`
+/// 示例：`curl -X POST http://127.0.0.1:8000/api/cluster/init -d []`
 #[post("/init", data = "<req>")]
 pub async fn init(req: Json<Vec<(NodeId, String)>>) -> Res<String> {
     let app = get_app();
