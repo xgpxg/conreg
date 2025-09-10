@@ -4,7 +4,6 @@ use crate::protocol::Instance;
 use crate::protocol::request::{GetInstancesReq, HeartbeatReq, RegisterReq};
 use crate::protocol::response::HeartbeatResult;
 use dashmap::DashMap;
-use std::collections::HashMap;
 use std::fmt::Debug;
 use std::sync::Arc;
 use std::time::Duration;
@@ -41,7 +40,7 @@ impl DiscoveryClient {
             service_id: self.service_id.clone(),
             ip: self.client.address.clone(),
             port: self.client.port,
-            meta: HashMap::default(),
+            meta: self.config.meta.clone(),
         };
         let instance = HTTP
             .post::<Instance>(
@@ -52,6 +51,7 @@ impl DiscoveryClient {
                 req,
             )
             .await?;
+        log::info!("register instance with service id: {:?}", self.service_id);
         Ok(instance)
     }
 

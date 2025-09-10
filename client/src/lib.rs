@@ -357,6 +357,7 @@ impl AppDiscovery {
 #[cfg(test)]
 #[allow(unused)]
 mod tests {
+    use std::collections::HashMap;
     use super::*;
     use crate::conf::{ClientConfigBuilder, ConRegConfigBuilder, DiscoveryConfigBuilder};
     use serde::Deserialize;
@@ -401,30 +402,30 @@ mod tests {
     #[tokio::test]
     async fn test_discovery() {
         //init_log();
-        //init().await;
-        let config = ConRegConfigBuilder::default()
-            .service_id("your_service_id")
-            .client(
-                ClientConfigBuilder::default()
-                    .address("127.0.0.1")
-                    .port(8080)
-                    .build()
-                    .unwrap(),
-            )
-            .discovery(
-                DiscoveryConfigBuilder::default()
-                    .server_addr(vec!["127.0.0.1:8000", "127.0.0.1:8001"])
-                    .build()
-                    .unwrap(),
-            )
-            .build()
-            .unwrap();
-        // println!("config: {:?}", config);
-        let service_id = config.service_id.clone();
-        init_with(config).await;
+        init().await;
+        // let config = ConRegConfigBuilder::default()
+        //     .service_id("your_service_id")
+        //     .client(
+        //         ClientConfigBuilder::default()
+        //             .address("127.0.0.1")
+        //             .port(8080)
+        //             .build()
+        //             .unwrap(),
+        //     )
+        //     .discovery(
+        //         DiscoveryConfigBuilder::default()
+        //             .server_addr(vec!["127.0.0.1:8000", "127.0.0.1:8001"])
+        //             .build()
+        //             .unwrap(),
+        //     )
+        //     .build()
+        //     .unwrap();
+        // // println!("config: {:?}", config);
+        // let service_id = config.service_id.clone();
+        // init_with(config).await;
         let h = tokio::spawn(async move {
             loop {
-                let instances = AppDiscovery::get_instances(&service_id).await.unwrap();
+                let instances = AppDiscovery::get_instances(utils::current_process_name().as_str()).await.unwrap();
                 println!("current: {:?}", instances);
                 tokio::time::sleep(std::time::Duration::from_secs(1)).await;
             }

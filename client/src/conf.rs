@@ -1,6 +1,7 @@
 use crate::utils;
 use derive_builder::Builder;
 use serde::Deserialize;
+use std::collections::HashMap;
 
 /// 配置/注册中心的整体配置
 /// 包一层是因为适配bootstrap.yaml中顶层的key为conreg
@@ -132,6 +133,10 @@ pub struct DiscoveryConfig {
     #[serde(default = "DiscoveryConfig::default_namespace")]
     #[builder(setter(into), default = "DiscoveryConfig::default_namespace()")]
     pub namespace: String,
+    #[serde(default = "HashMap::default")]
+    #[builder(setter(into), default = "HashMap::default()")]
+    /// 元数据
+    pub meta: HashMap<String, String>,
 }
 
 impl DiscoveryConfig {
