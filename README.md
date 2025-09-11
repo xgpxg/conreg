@@ -3,6 +3,12 @@
 Configuration and registry center implemented in Rust, referencing the design of Nacos, simple and easy to use, using
 Raft to ensure data consistency across cluster nodes.
 
+Supported platforms:
+
+- Ubuntu
+- CentOS
+- Other common Linux distributions (we compile with `musl`, theoretically supporting all major Linux distributions)
+
 # Features
 
 Configuration Center:
@@ -63,6 +69,8 @@ conreg-server -p 8000
 
 Open with browser: http://127.0.0.1:8000
 
+Default username and password: conreg/conreg
+
 ### Cluster Deployment
 
 In production environments, cluster deployment is generally recommended. The following example uses a 3-node cluster:
@@ -81,6 +89,9 @@ conreg3/conreg-server -p 8003 -d ./conreg3/data3 -m cluster -n 3
 # Initialize cluster
 curl -X POST http://127.0.0.1:8001/api/cluster/init -d [[1,"127.0.0.1:8000"],[2,"127.0.0.1:8001"],[3,"127.0.0.1:8002"]]
 ```
+
+You can use proxy components, such as Nginx, to proxy cluster nodes so that you can view the backend pages through a
+browser, or you can directly access any node in the cluster.
 
 For cluster management (such as initialization, scaling out, scaling in, monitoring, etc.), we provide a CLI tool for
 cluster management: [conreg-cmt](https://crates.io/crates/conreg-cmt), which can be used conveniently
