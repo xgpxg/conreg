@@ -55,7 +55,15 @@ impl ConfigClient {
 
         let result = HTTP.get::<HashMap<String, Value>>(&url, query).await?;
 
-        let content = result.get("content").unwrap().as_str().unwrap();
+        let content = result
+            .get("content")
+            // if content is none, maybe config id not exists
+            .ok_or(anyhow::anyhow!(
+                "config id [ {} ] not found in server",
+                config_id
+            ))?
+            .as_str()
+            .unwrap();
         log::info!("config {} fetched", config_id);
 
         Ok(content.to_string())
