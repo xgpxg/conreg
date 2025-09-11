@@ -63,6 +63,7 @@ Web UI:
 ```shell
 # Download package
 curl -L https://github.com/xgpxg/conreg/releases/latest/download/conreg-server.tar.gz | tar -zxvf - -C .
+
 # Start server
 conreg-server -p 8000
 ```
@@ -78,14 +79,17 @@ In production environments, cluster deployment is generally recommended. The fol
 ```shell
 # Download package
 curl -L https://github.com/xgpxg/conreg/releases/latest/download/conreg-server.tar.gz 
+
 # Unzip package
 tar -zxvf conreg-server.tar.gz -C ./conreg1
 tar -zxvf conreg-server.tar.gz -C ./conreg2
 tar -zxvf conreg-server.tar.gz -C ./conreg3
+
 # Start server
 conreg1/conreg-server -p 8001 -d ./conreg1/data1 -m cluster -n 1
 conreg2/conreg-server -p 8002 -d ./conreg2/data2 -m cluster -n 2
 conreg3/conreg-server -p 8003 -d ./conreg3/data3 -m cluster -n 3
+
 # Initialize cluster
 curl -X POST http://127.0.0.1:8001/api/cluster/init -d [[1,"127.0.0.1:8001"],[2,"127.0.0.1:8002"],[3,"127.0.0.1:8003"]]
 ```
@@ -121,6 +125,8 @@ conreg-client is a client SDK for Conreg, used for integration into your Rust ap
 You can view the detailed documentation from [conreg-client](https://docs.rs/conreg-client)
 
 # UI
+
+Look here: [conreg-ui](https://github.com/xgpxg/conreg-ui)
 
 ![img.png](docs/ui.png)
 
