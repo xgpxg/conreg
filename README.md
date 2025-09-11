@@ -123,3 +123,20 @@ You can view the detailed documentation from [conreg-client](https://docs.rs/con
 # UI
 
 ![img.png](docs/ui.png)
+
+# Performance
+
+Test machine (Windows WSL): Intel i7-8750H, 6 cores 12 threads, 16G memory.
+
+Tested with 1 million requests and use standalone mode.
+
+| Operation                     | Performance | Notes                 |
+|-------------------------------|-------------|-----------------------|
+| Configuration write           | 1.3k/s      | -                     |
+| Configuration read            | 11k/s       | Without cache enabled |
+| Configuration read            | 52k/s       | With cache enabled    |
+| Service instance registration | 1.1k/s      | -                     |
+| Service instance query        | 55k/s       | -                     |
+| Service instance heartbeat    | 1.4k/s      | -                     |
+
+Memory stable usage at 55.7M
