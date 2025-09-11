@@ -87,7 +87,7 @@ conreg1/conreg-server -p 8001 -d ./conreg1/data1 -m cluster -n 1
 conreg2/conreg-server -p 8002 -d ./conreg2/data2 -m cluster -n 2
 conreg3/conreg-server -p 8003 -d ./conreg3/data3 -m cluster -n 3
 # Initialize cluster
-curl -X POST http://127.0.0.1:8001/api/cluster/init -d [[1,"127.0.0.1:8000"],[2,"127.0.0.1:8001"],[3,"127.0.0.1:8002"]]
+curl -X POST http://127.0.0.1:8001/api/cluster/init -d [[1,"127.0.0.1:8001"],[2,"127.0.0.1:8002"],[3,"127.0.0.1:8003"]]
 ```
 
 You can use proxy components, such as Nginx, to proxy cluster nodes so that you can view the backend pages through a
