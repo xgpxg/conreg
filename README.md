@@ -1,8 +1,9 @@
 # Conreg
 
-Configuration and registry center implemented in Rust, referencing the design of Nacos, integrating configuration and
-service discovery into one, simple and easy to use, supporting cluster deployment, using Raft to ensure data
-consistency.
+Configuration and registry center implemented in Rust, referencing the design of Nacos, simple and easy to use, using
+Raft to ensure data consistency across cluster nodes.
+
+# Features
 
 Configuration Center:
 
@@ -23,7 +24,7 @@ Registry Center:
 
 Security:
 
-- [ ] Login verification
+- [x] Login verification
 - [ ] OpenAPI authentication
 
 Client SDK（[conreg-client](https://docs.rs/conreg-client)）：
@@ -47,43 +48,42 @@ Web UI:
 - [x] Basic UI
 - Embedding and Integration
 
-# Overall Architecture
+# How to use
 
-<img alt="architecture" src="docs/architecture.png" width="500px"/>
+## Conreg Server
 
-# Conreg Server
-
-## Standalone Deployment
-
-- Startup
+### Standalone Deployment
 
 ```shell
+# Download package
+curl -L https://github.com/xgpxg/conreg/releases/latest/download/conreg-server.tar.gz | tar -zxvf - -C .
+# Start server
 conreg-server -p 8000
 ```
 
-## Cluster Deployment
+Open with browser: http://127.0.0.1:8000
 
-Single Node
+### Cluster Deployment
 
-- Manual Deployment
-
-Start multiple nodes:
+In production environments, cluster deployment is generally recommended. The following example uses a 3-node cluster:
 
 ```shell
-conreg-server -p 8001 -d ./data1 -m cluster -n 1
-conreg-server -p 8002 -d ./data2 -m cluster -n 2
-conreg-server -p 8003 -d ./data3 -m cluster -n 3
-```
-
-Initialization:
-
-```shell
+# Download package
+curl -L https://github.com/xgpxg/conreg/releases/latest/download/conreg-server.tar.gz 
+# Unzip package
+tar -zxvf conreg-server.tar.gz -C ./conreg1
+tar -zxvf conreg-server.tar.gz -C ./conreg2
+tar -zxvf conreg-server.tar.gz -C ./conreg3
+# Start server
+conreg1/conreg-server -p 8001 -d ./conreg1/data1 -m cluster -n 1
+conreg2/conreg-server -p 8002 -d ./conreg2/data2 -m cluster -n 2
+conreg3/conreg-server -p 8003 -d ./conreg3/data3 -m cluster -n 3
+# Initialize cluster
 curl -X POST http://127.0.0.1:8001/api/cluster/init -d [[1,"127.0.0.1:8000"],[2,"127.0.0.1:8001"],[3,"127.0.0.1:8002"]]
 ```
 
-- Using Cluster Management Tool
-  A CLI tool for cluster management is provided for cluster creation, scaling, and scaling
-  in:[conreg-cmt](https://crates.io/crates/conreg-cmt)
+For cluster management (such as initialization, scaling out, scaling in, monitoring, etc.), we provide a CLI tool for
+cluster management: [conreg-cmt](https://crates.io/crates/conreg-cmt), which can be used conveniently
 
 ```shell
 Usage: conreg-cmt --server <SERVER> <COMMAND>
@@ -102,6 +102,12 @@ Options:
   -h, --help             Print help
   -V, --version          Print version
 ```
+
+## Conreg Client
+
+conreg-client is a client SDK for Conreg, used for integration into your Rust applications.
+
+You can view the detailed documentation from [conreg-client](https://docs.rs/conreg-client)
 
 # UI
 
