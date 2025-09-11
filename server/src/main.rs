@@ -46,6 +46,9 @@ pub struct Args {
     node_id: u64,
     #[arg(short, long, default_value = "standalone")]
     mode: Mode,
+    /// Whether to enable configuration cache
+    #[arg(long, default_value_t = false)]
+    enable_cache_config: bool,
 }
 
 #[derive(Parser, Debug, Clone, ValueEnum)]

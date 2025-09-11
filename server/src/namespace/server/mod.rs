@@ -3,6 +3,7 @@ pub mod api;
 use crate::Args;
 use crate::db::DbPool;
 use crate::raft::RaftRequest;
+use crate::raft::api::raft_write;
 use anyhow::bail;
 use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
@@ -132,11 +133,11 @@ impl NamespaceManager {
 
     async fn sync(&self, request: RaftRequest) -> anyhow::Result<()> {
         log::info!("sync namespace request: {:?}", request);
-        self.http_client
-            .post(format!("http://127.0.0.1:{}/api/cluster/write", self.args.port))
-            .json(&request)
-            .send()
-            .await?;
+        let res = raft_write(request).await;
+        if !res.is_success() {
+            log::error!("sync namespace error: {:?}", res.msg);
+            bail!("sync namespace error: {}", res.msg);
+        }
         log::info!("sync namespace success");
         Ok(())
     }

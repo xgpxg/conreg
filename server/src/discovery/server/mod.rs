@@ -4,6 +4,7 @@ use crate::Args;
 use crate::db::DbPool;
 use crate::discovery::discovery::{Discovery, HeartbeatResult, ServiceInstance};
 use crate::raft::RaftRequest;
+use crate::raft::api::raft_write;
 use anyhow::bail;
 use chrono::{DateTime, Local};
 use dashmap::DashMap;
@@ -85,11 +86,11 @@ impl DiscoveryManager {
 
     async fn sync(&self, request: RaftRequest) -> anyhow::Result<()> {
         log::debug!("sync discovery request: {:?}", request);
-        self.http_client
-            .post(format!("http://127.0.0.1:{}/api/cluster/write", self.args.port))
-            .json(&request)
-            .send()
-            .await?;
+        let res = raft_write(request).await;
+        if !res.is_success() {
+            log::error!("sync discovery error: {:?}", res.msg);
+            bail!("sync discovery error: {}", res.msg);
+        }
         log::debug!("sync discovery success");
         Ok(())
     }

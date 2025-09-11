@@ -2,8 +2,10 @@ use crate::Args;
 use crate::db::DbPool;
 use crate::protocol::id;
 use crate::raft::RaftRequest;
+use crate::raft::api::raft_write;
 use anyhow::bail;
 use chrono::{DateTime, Local};
+use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use std::time::Duration;
@@ -50,6 +52,8 @@ pub struct ConfigManager {
     http_client: reqwest::Client,
     /// 配置变化通知
     sender: tokio::sync::broadcast::Sender<String>,
+    /// 配置缓存
+    config_cache: DashMap<(String, String), Option<ConfigEntry>>,
 }
 
 impl ConfigManager {
@@ -64,6 +68,7 @@ impl ConfigManager {
             http_client,
             args: args.clone(),
             sender,
+            config_cache: DashMap::new(),
         })
     }
 
@@ -77,12 +82,28 @@ impl ConfigManager {
         namespace_id: &str,
         config_id: &str,
     ) -> anyhow::Result<Option<ConfigEntry>> {
+        if self.args.enable_cache_config {
+            if let Some(config) = self
+                .config_cache
+                .get(&(namespace_id.to_string(), config_id.to_string()))
+            {
+                return Ok(config.clone());
+            }
+        }
         let config: Option<ConfigEntry> =
             sqlx::query_as("SELECT * FROM config WHERE namespace_id = ? AND id = ?")
                 .bind(namespace_id)
                 .bind(config_id)
                 .fetch_optional(DbPool::get())
                 .await?;
+
+        if self.args.enable_cache_config {
+            self.config_cache.insert(
+                (namespace_id.to_string(), config_id.to_string()),
+                config.clone(),
+            );
+        }
+
         Ok(config)
     }
 
@@ -175,17 +196,22 @@ impl ConfigManager {
         sqlx::query(
             "UPDATE config SET content = ?, description = ?, update_time = ?, format = ?, md5 = ? WHERE id_ = ?",
         )
-        .bind(&entry.content)
-        .bind(&entry.description)
-        .bind(&entry.update_time)
-        .bind(&entry.format)
-        .bind(&entry.md5)
-        .bind(&entry.id_)
-        .execute(DbPool::get())
-        .await?;
+            .bind(&entry.content)
+            .bind(&entry.description)
+            .bind(&entry.update_time)
+            .bind(&entry.format)
+            .bind(&entry.md5)
+            .bind(&entry.id_)
+            .execute(DbPool::get())
+            .await?;
 
         // 添加历史记录
         self.append_history(&entry).await?;
+
+        if self.args.enable_cache_config {
+            self.config_cache
+                .remove(&(entry.namespace_id.to_string(), entry.id.to_string()));
+        }
 
         self.notify_config_change(entry.namespace_id.to_string());
 
@@ -245,17 +271,17 @@ impl ConfigManager {
         sqlx::query(
             "INSERT INTO config_history (id_, namespace_id, id, content, description, create_time, update_time, md5) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         )
-        // 注意这个ID，不能自增或随机生成，需要从entry中计算而来，以保证多节点下的数据的一致性
-        .bind(&entry.id_ + entry.update_time.timestamp_millis())
-        .bind(&entry.namespace_id)
-        .bind(&entry.id)
-        .bind(&entry.content)
-        .bind(&entry.description)
-        .bind(&entry.create_time)
-        .bind(&entry.update_time)
-        .bind(&entry.md5)
-        .execute(DbPool::get())
-        .await?;
+            // 注意这个ID，不能自增或随机生成，需要从entry中计算而来，以保证多节点下的数据的一致性
+            .bind(&entry.id_ + entry.update_time.timestamp_millis())
+            .bind(&entry.namespace_id)
+            .bind(&entry.id)
+            .bind(&entry.content)
+            .bind(&entry.description)
+            .bind(&entry.create_time)
+            .bind(&entry.update_time)
+            .bind(&entry.md5)
+            .execute(DbPool::get())
+            .await?;
 
         Ok(())
     }
@@ -301,14 +327,11 @@ impl ConfigManager {
     /// 同步操作会阻塞进行，直到raft日志同步成功（即超过半数的节点写入成功）
     async fn sync(&self, request: RaftRequest) -> anyhow::Result<()> {
         log::info!("sync config request: {:?}", request);
-        self.http_client
-            .post(format!(
-                "http://127.0.0.1:{}/api/cluster/write",
-                self.args.port
-            ))
-            .json(&request)
-            .send()
-            .await?;
+        let res = raft_write(request).await;
+        if !res.is_success() {
+            log::error!("sync config error: {:?}", res.msg);
+            bail!("sync config error: {}", res.msg);
+        }
         log::info!("sync config success");
         Ok(())
     }
@@ -378,12 +401,12 @@ impl ConfigManager {
         let rows: Vec<ConfigEntry> = sqlx::query_as(
             "SELECT * FROM config_history WHERE namespace_id = ? AND id = ? ORDER BY id_ DESC LIMIT ?, ?",
         )
-        .bind(namespace_id)
-        .bind(id)
-        .bind(offset)
-        .bind(page_size)
-        .fetch_all(DbPool::get())
-        .await?;
+            .bind(namespace_id)
+            .bind(id)
+            .bind(offset)
+            .bind(page_size)
+            .fetch_all(DbPool::get())
+            .await?;
 
         Ok((total, rows))
     }
@@ -401,6 +424,7 @@ mod tests {
             data_dir: "./data".to_string(),
             node_id: 1,
             mode: Mode::Standalone,
+            enable_cache_config: false,
         };
         let cm = ConfigManager::new(&args).await.unwrap();
         let config = cm.get_config("public", "test").await.unwrap();

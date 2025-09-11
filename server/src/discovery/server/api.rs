@@ -149,13 +149,10 @@ async fn deregister_instance(req: Json<DeregisterServiceInstanceReq>) -> Res<()>
 }
 
 /// 获取服务实例列表
-///
-/// 该接口仅在后台调用
 #[get("/instance/list?<namespace_id>&<service_id>")]
 async fn list_instances(
     namespace_id: &str,
     service_id: &str,
-    _user: UserPrincipal,
 ) -> Res<Vec<ServiceInstance>> {
     match get_app()
         .discovery_app
