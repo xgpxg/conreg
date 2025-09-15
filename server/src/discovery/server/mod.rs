@@ -64,22 +64,16 @@ impl sqlx::FromRow<'_, SqliteRow> for Service {
 #[derive(Debug)]
 pub struct DiscoveryManager {
     /// 启动参数
+    #[allow(unused)]
     args: Args,
-    /// Http客户端，主要用于提交raft命令
-    http_client: reqwest::Client,
     /// 命名空间ID -> 服务发现组件实例
     discoveries: DashMap<String, Discovery>,
 }
 
 impl DiscoveryManager {
     pub async fn new(args: &Args) -> anyhow::Result<Self> {
-        let http_client = reqwest::ClientBuilder::new()
-            .connect_timeout(Duration::from_secs(3))
-            .read_timeout(Duration::from_secs(5))
-            .build()?;
         Ok(DiscoveryManager {
             args: args.clone(),
-            http_client,
             discoveries: DashMap::default(),
         })
     }

@@ -8,7 +8,6 @@ use chrono::{DateTime, Local};
 use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
-use std::time::Duration;
 use tracing::log;
 
 pub mod api;
@@ -48,8 +47,6 @@ impl ConfigEntry {
 pub struct ConfigManager {
     /// 启动参数
     args: Args,
-    /// Http客户端，主要用于同步log到集群
-    http_client: reqwest::Client,
     /// 配置变化通知
     sender: tokio::sync::broadcast::Sender<String>,
     /// 配置缓存
@@ -58,14 +55,8 @@ pub struct ConfigManager {
 
 impl ConfigManager {
     pub async fn new(args: &Args) -> anyhow::Result<Self> {
-        let http_client = reqwest::ClientBuilder::new()
-            .connect_timeout(Duration::from_secs(3))
-            .read_timeout(Duration::from_secs(60))
-            .build()?;
-
         let (sender, _) = tokio::sync::broadcast::channel(1024);
         Ok(Self {
-            http_client,
             args: args.clone(),
             sender,
             config_cache: DashMap::new(),

@@ -32,6 +32,7 @@ Security:
 
 - [x] Login verification
 - [ ] OpenAPI authentication
+- [ ] Configuration content encryption
 
 Client SDK（[conreg-client](https://docs.rs/conreg-client)）：
 

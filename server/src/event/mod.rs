@@ -2,6 +2,7 @@ use crate::app::get_app;
 use crate::cache;
 use crate::raft::RaftRequest;
 use std::sync::LazyLock;
+use std::sync::atomic::AtomicBool;
 use tokio::sync::mpsc;
 use tracing::log;
 
@@ -40,11 +41,19 @@ static EVENT_BUS: LazyLock<EventBus> = LazyLock::new(|| EventBus::new());
 
 pub struct EventHandler {
     receiver: mpsc::UnboundedReceiver<Event>,
+    /// 初始化标记
+    /// 这是一个不优雅的实现，因为在App初始化未完成前，Raft已经初始化，Raft已经开始工作，
+    /// 这就会导致在Event处理中get_app()时，App未完成初始化，导致panic。
+    /// 目前先使用这个标记在第一次处理Event时，等待1秒，即等待App完全初始化完成。
+    init_flag: AtomicBool,
 }
 
 impl EventHandler {
     pub fn new(receiver: mpsc::UnboundedReceiver<Event>) -> Self {
-        Self { receiver }
+        Self {
+            receiver,
+            init_flag: AtomicBool::new(false),
+        }
     }
 
     pub async fn handle_events(mut self) {
@@ -54,6 +63,11 @@ impl EventHandler {
     }
 
     async fn process_event(&self, event: Event) {
+        if !self.init_flag.load(std::sync::atomic::Ordering::Acquire) {
+            tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+            self.init_flag
+                .store(true, std::sync::atomic::Ordering::Release);
+        }
         match event {
             Event::RaftRequestEvent(req) => {
                 self.handle_raft_request(req).await;
