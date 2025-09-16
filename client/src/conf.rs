@@ -82,14 +82,14 @@ impl From<Vec<String>> for ServerAddr {
 
 #[derive(Debug, Deserialize, Clone, Builder)]
 pub struct ClientConfig {
-    #[builder(setter(into))]
+    #[builder(setter(into), default = "ClientConfig::default_address()")]
     pub address: String,
     pub port: u16,
 }
 impl Default for ClientConfig {
     fn default() -> Self {
         ClientConfig {
-            address: "127.0.0.1".to_string(),
+            address: ClientConfig::default_address(),
             port: 8080,
         }
     }
@@ -99,6 +99,9 @@ impl ClientConfig {
     pub fn gen_instance_id(&self) -> String {
         let digest = md5::compute(format!("{}:{}", self.address, self.port));
         format!("{:x}", digest)
+    }
+    pub fn default_address() -> String {
+        "127.0.0.1".to_string()
     }
 }
 

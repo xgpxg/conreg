@@ -28,6 +28,12 @@ pub use weight_random::WeightRandomLoadBalance;
 pub use weight_round::WeightRoundRobinLoadBalance;
 
 pub trait LoadBalance {
-    async fn instances(&self, service_id: &str) -> anyhow::Result<Vec<Instance>>;
-    async fn get_instance(&self, service_id: &str) -> anyhow::Result<Instance>;
+    fn instances(
+        &self,
+        service_id: &str,
+    ) -> impl Future<Output = anyhow::Result<Vec<Instance>>> + Send;
+    fn get_instance(
+        &self,
+        service_id: &str,
+    ) -> impl Future<Output = anyhow::Result<Instance>> + Send;
 }
