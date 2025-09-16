@@ -1,6 +1,6 @@
 conreg:
   # 服务ID
-  #service-id: test
+  service-id: test
   # 客户端配置
   client:
     # 监听地址
@@ -19,7 +19,7 @@ conreg:
     # 注册中心地址
     server-addr:
       - 127.0.0.1:8000
-      - 127.0.0.1:8001
-      - 127.0.0.1:8002
+#      - 127.0.0.1:8001
+#      - 127.0.0.1:8002
     meta:
       version: 0.1.0

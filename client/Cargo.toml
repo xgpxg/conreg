@@ -1,6 +1,6 @@
 [package]
 name = "conreg-client"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2024"
 description = "Conreg is a distributed configuration and registration center similar to Nacos, and conreg client is conreg's client SDK"
 license = "Apache-2.0"
@@ -16,7 +16,8 @@ tokio = { version = "1.47.1", features = ["full"] }
 log = "0.4.28"
 env_logger = "0.11.8"
 chrono = "0.4.41"
-rand = "0.9.2"
+#rand = "0.9.2"
 md5 = "0.8.0"
 dashmap = "6.1.0"
 derive_builder = "0.20.2"
+fastrand = "2.3.0"

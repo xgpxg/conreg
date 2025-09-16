@@ -1,13 +1,12 @@
 use crate::conf::ServerAddr;
+use crate::protocol::response::Res;
 use anyhow::bail;
-use rand::{Rng, rng};
 use reqwest::StatusCode;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use std::fmt::Debug;
 use std::sync::LazyLock;
 use std::time::Duration;
-use crate::protocol::response::Res;
 
 pub struct Network {
     client: reqwest::Client,
@@ -66,7 +65,7 @@ impl ServerAddr {
                 Ok(url)
             }
             ServerAddr::Cluster(addresses) => {
-                let address = addresses[rng().random_range(0..addresses.len())].clone();
+                let address = addresses[fastrand::usize(0..addresses.len())].clone();
                 let url = format!("http://{}{}", address, path);
                 Ok(url)
             }

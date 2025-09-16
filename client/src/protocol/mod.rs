@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_yaml::Value;
 use std::collections::HashMap;
 
 pub(crate) mod request;
@@ -16,5 +17,15 @@ pub struct Instance {
     /// 端口
     pub port: u16,
     /// 元数据
-    pub meta: HashMap<String, String>,
+    pub meta: HashMap<String, Value>,
+}
+
+impl Instance {
+    pub fn get_weight(&self) -> u64 {
+        self.meta
+            .get("weight")
+            .unwrap_or(&Value::Number(1.into()))
+            .as_u64()
+            .unwrap()
+    }
 }

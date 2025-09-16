@@ -186,6 +186,7 @@ mod discovery;
 mod network;
 mod protocol;
 mod utils;
+mod lb;
 
 struct Conreg;
 
