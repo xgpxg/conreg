@@ -183,10 +183,10 @@ use std::sync::{Arc, OnceLock, RwLock};
 pub mod conf;
 mod config;
 mod discovery;
+pub mod lb;
 mod network;
 mod protocol;
 mod utils;
-mod lb;
 
 struct Conreg;
 
@@ -358,10 +358,10 @@ impl AppDiscovery {
 #[cfg(test)]
 #[allow(unused)]
 mod tests {
-    use std::collections::HashMap;
     use super::*;
     use crate::conf::{ClientConfigBuilder, ConRegConfigBuilder, DiscoveryConfigBuilder};
     use serde::Deserialize;
+    use std::collections::HashMap;
     #[tokio::test]
     async fn test_config() {
         //init_log();
@@ -427,7 +427,9 @@ mod tests {
         let h = tokio::spawn(async move {
             loop {
                 println!("{:?}", AppConfig::get::<String>("name"));
-                let instances = AppDiscovery::get_instances(utils::current_process_name().as_str()).await.unwrap();
+                let instances = AppDiscovery::get_instances(utils::current_process_name().as_str())
+                    .await
+                    .unwrap();
                 println!("current: {:?}", instances);
                 tokio::time::sleep(std::time::Duration::from_secs(1)).await;
             }
