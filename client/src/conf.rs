@@ -1,6 +1,7 @@
 use crate::utils;
 use derive_builder::Builder;
 use serde::Deserialize;
+use serde_yaml::Value;
 use std::collections::HashMap;
 
 /// 配置/注册中心的整体配置
@@ -136,7 +137,7 @@ pub struct DiscoveryConfig {
     #[serde(default = "HashMap::default")]
     #[builder(setter(into), default = "HashMap::default()")]
     /// 元数据
-    pub meta: HashMap<String, String>,
+    pub meta: HashMap<String, Value>,
 }
 
 impl DiscoveryConfig {
@@ -144,4 +145,17 @@ impl DiscoveryConfig {
     fn default_namespace() -> String {
         "public".to_string()
     }
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+pub enum LoadBalanceStrategy {
+    /// 轮询
+    #[default]
+    RoundRobin,
+    /// 加权轮询
+    Weighted,
+    /// 随机
+    Random,
+    /// 加权随机
+    WeightedRandom,
 }

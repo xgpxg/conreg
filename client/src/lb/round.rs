@@ -7,6 +7,12 @@ use dashmap::DashMap;
 pub struct RoundRobinLoadBalance {
     index: DashMap<String, usize>,
 }
+impl RoundRobinLoadBalance {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+
 impl LoadBalance for RoundRobinLoadBalance {
     async fn instances(&self, service_id: &str) -> anyhow::Result<Vec<Instance>> {
         AppDiscovery::get_instances(service_id).await

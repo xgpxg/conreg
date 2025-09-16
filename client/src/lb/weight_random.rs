@@ -2,13 +2,9 @@ use crate::lb::LoadBalance;
 use crate::{AppDiscovery, Instance};
 use anyhow::bail;
 
+#[derive(Debug,Default)]
 pub struct WeightRandomLoadBalance {}
 
-impl Default for WeightRandomLoadBalance {
-    fn default() -> Self {
-        Self {}
-    }
-}
 
 impl WeightRandomLoadBalance {
     pub fn new() -> Self {

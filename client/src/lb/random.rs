@@ -2,7 +2,14 @@ use crate::lb::LoadBalance;
 use crate::{AppDiscovery, Instance};
 use anyhow::bail;
 
+#[derive(Debug, Default)]
 pub struct RandomLoadBalance;
+
+impl RandomLoadBalance {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 
 impl LoadBalance for RandomLoadBalance {
     async fn instances(&self, service_id: &str) -> anyhow::Result<Vec<Instance>> {

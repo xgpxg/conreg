@@ -4,17 +4,10 @@ use anyhow::bail;
 use dashmap::DashMap;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
+#[derive(Debug, Default)]
 pub struct WeightRoundRobinLoadBalance {
     /// 每个服务的当前权重索引
     current_weight: DashMap<String, AtomicUsize>,
-}
-
-impl Default for WeightRoundRobinLoadBalance {
-    fn default() -> Self {
-        Self {
-            current_weight: DashMap::new(),
-        }
-    }
 }
 
 impl WeightRoundRobinLoadBalance {

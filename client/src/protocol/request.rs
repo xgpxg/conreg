@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use serde_yaml::Value;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct GetConfigReq {
@@ -18,7 +19,7 @@ pub(crate) struct RegisterReq {
     pub(crate) service_id: String,
     pub(crate) ip: String,
     pub(crate) port: u16,
-    pub(crate) meta: HashMap<String, String>,
+    pub(crate) meta: HashMap<String, Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
