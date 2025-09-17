@@ -86,7 +86,10 @@ impl DiscoveryClient {
             instance_id: self.client.gen_instance_id(),
         };
         HTTP.post::<HeartbeatResult>(
-            &self.config.server_addr.build_url("/api/discovery/heartbeat")?,
+            &self
+                .config
+                .server_addr
+                .build_url("/api/discovery/heartbeat")?,
             req,
         )
         .await

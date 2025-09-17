@@ -1,6 +1,5 @@
-use crate::lb::LoadBalance;
-use crate::{AppDiscovery, Instance};
-use anyhow::bail;
+use crate::Instance;
+use crate::lb::{LoadBalance, LoadBalanceError};
 use dashmap::DashMap;
 
 #[derive(Debug, Default)]
@@ -14,14 +13,13 @@ impl RoundRobinLoadBalance {
 }
 
 impl LoadBalance for RoundRobinLoadBalance {
-    async fn instances(&self, service_id: &str) -> anyhow::Result<Vec<Instance>> {
-        AppDiscovery::get_instances(service_id).await
-    }
-
-    async fn get_instance(&self, service_id: &str) -> anyhow::Result<Instance> {
+    async fn get_instance(&self, service_id: &str) -> Result<Instance, LoadBalanceError> {
         let instances = self.instances(service_id).await?;
+
         if instances.is_empty() {
-            bail!("no instance found with service id: {}", service_id);
+            return Err(LoadBalanceError::NoAvailableInstance(
+                service_id.to_string(),
+            ));
         }
         if instances.len() == 1 {
             return Ok(instances[0].clone());
