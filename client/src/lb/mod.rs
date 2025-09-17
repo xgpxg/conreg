@@ -80,9 +80,9 @@ pub enum LoadBalanceError {
 impl std::fmt::Display for LoadBalanceError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            LoadBalanceError::GetInstancesError(e) => write!(f, "failed to get instances: {}", e),
+            LoadBalanceError::GetInstancesError(e) => write!(f, "Failed to get instances: {}", e),
             LoadBalanceError::NoAvailableInstance(s) => {
-                write!(f, "no available instance for service: {}", s)
+                write!(f, "No available instance for service: {}", s)
             }
         }
     }
