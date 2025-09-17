@@ -1,5 +1,9 @@
 # Conreg
 
+![Release](https://github.com/xgpxg/conreg/actions/workflows/publish.yml/badge.svg)
+![GitHub release](https://img.shields.io/github/v/release/xgpxg/conreg?label=Version)
+![Crates.io](https://img.shields.io/crates/d/conreg-client?label=conreg-client)
+
 Configuration and registry center implemented in Rust, referencing the design of Nacos, simple and easy to use, using
 Raft to ensure data consistency across cluster nodes.
 
