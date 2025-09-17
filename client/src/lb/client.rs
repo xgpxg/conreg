@@ -18,7 +18,6 @@ use crate::lb::{
 };
 use dashmap::DashMap;
 use reqwest::{Client, Method, RequestBuilder, Url};
-use std::str::FromStr;
 use std::time::Duration;
 
 /// 负载均衡策略

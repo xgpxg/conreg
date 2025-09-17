@@ -107,7 +107,6 @@ pub fn get_app() -> &'static App {
 impl App {
     /// 退出前清理资源
     pub fn clean(&self) {
-        // TODO 当有客户端连接时，可能导致无法保存最终快照
         block_on(async {
             // 保存状态机快照
             if let Err(e) = self.raft.trigger().snapshot().await {

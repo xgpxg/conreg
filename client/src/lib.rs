@@ -232,7 +232,8 @@ impl Conreg {
     }
 
     async fn init_with(config: &ConRegConfig) -> anyhow::Result<()> {
-        //utils::init_log();
+        #[cfg(feature = "logger")]
+        utils::init_log();
 
         if config.config.is_some() {
             let config_client = config::ConfigClient::new(&config);

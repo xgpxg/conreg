@@ -486,6 +486,8 @@ dependencies = [
  "serde",
  "serde_yaml",
  "tokio",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]

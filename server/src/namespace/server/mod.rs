@@ -7,7 +7,6 @@ use crate::raft::api::raft_write;
 use anyhow::bail;
 use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
-use std::time::Duration;
 use tracing::log;
 
 /// 命名空间
@@ -26,24 +25,11 @@ pub struct Namespace {
 }
 
 #[derive(Debug)]
-pub struct NamespaceManager {
-    /// Http客户端，主要用于同步log到集群
-    http_client: reqwest::Client,
-    /// 启动参数
-    args: Args,
-}
+pub struct NamespaceManager;
 
 impl NamespaceManager {
-    pub async fn new(args: &Args) -> anyhow::Result<Self> {
-        let http_client = reqwest::ClientBuilder::new()
-            .connect_timeout(Duration::from_secs(3))
-            .read_timeout(Duration::from_secs(60))
-            .build()?;
-
-        Ok(Self {
-            http_client,
-            args: args.clone(),
-        })
+    pub async fn new(_args: &Args) -> anyhow::Result<Self> {
+        Ok(Self {})
     }
 
     pub async fn get_namespace(&self, id: &str) -> anyhow::Result<Option<Namespace>> {
