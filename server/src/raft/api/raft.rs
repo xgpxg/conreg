@@ -1,7 +1,6 @@
 use crate::app::get_app;
 use crate::raft::declare_types::VoteRequest;
 use crate::raft::{NodeId, TypeConfig};
-use tracing::log;
 use openraft::error::RaftError;
 use openraft::raft::InstallSnapshotResponse;
 use openraft::raft::VoteResponse;
@@ -9,6 +8,7 @@ use openraft::raft::{AppendEntriesRequest, AppendEntriesResponse, InstallSnapsho
 use rocket::http::Status;
 use rocket::post;
 use rocket::serde::json::Json;
+use tracing::log;
 
 #[post("/vote", data = "<req>")]
 pub async fn vote(

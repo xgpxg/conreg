@@ -150,10 +150,7 @@ async fn deregister_instance(req: Json<DeregisterServiceInstanceReq>) -> Res<()>
 
 /// 获取服务实例列表
 #[get("/instance/list?<namespace_id>&<service_id>")]
-async fn list_instances(
-    namespace_id: &str,
-    service_id: &str,
-) -> Res<Vec<ServiceInstance>> {
+async fn list_instances(namespace_id: &str, service_id: &str) -> Res<Vec<ServiceInstance>> {
     match get_app()
         .discovery_app
         .manager

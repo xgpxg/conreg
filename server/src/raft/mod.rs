@@ -3,8 +3,8 @@ use crate::discovery::ServiceInstance;
 use crate::discovery::server::Service;
 use crate::namespace::server::Namespace;
 use serde::{Deserialize, Serialize};
-use std::io::Cursor;
 use serde_json::Value;
+use std::io::Cursor;
 
 pub mod api;
 mod declare_types;
@@ -56,7 +56,11 @@ pub enum RaftRequest {
         instance_id: String,
     },
     /// 缓存写入
-    CacheWrite { key: String, value: Value, ttl: Option<u64> },
+    CacheWrite {
+        key: String,
+        value: Value,
+        ttl: Option<u64>,
+    },
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct RaftResponse {
