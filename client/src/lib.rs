@@ -169,6 +169,11 @@
 //!     println!("service instances: {:?}", instances);
 //!  }
 //! ```
+//!
+//! # 负载均衡
+//! conreg-client基于reqwest提供了负载均衡客户端，支持使用lb://service_id格式的自定义协议发起请求。
+//!
+//! 参考：[`lb`]
 
 use crate::conf::{ConRegConfig, ConRegConfigWrapper};
 use crate::config::Configs;
