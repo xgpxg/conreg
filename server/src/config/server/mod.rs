@@ -48,9 +48,18 @@ pub struct ConfigManager {
     /// 启动参数
     args: Args,
     /// 配置变化通知
-    sender: tokio::sync::broadcast::Sender<String>,
+    sender: tokio::sync::broadcast::Sender<ConfigChangeEvent>,
     /// 配置缓存
     config_cache: DashMap<(String, String), Option<ConfigEntry>>,
+}
+
+/// 配置变更事件
+#[derive(Debug, Clone)]
+pub struct ConfigChangeEvent {
+    /// 命名空间ID
+    namespace_id: String,
+    /// 配置ID
+    config_id: String,
 }
 
 impl ConfigManager {
@@ -63,8 +72,11 @@ impl ConfigManager {
         })
     }
 
-    fn notify_config_change(&self, namespace_id: String) {
-        let _ = self.sender.send(namespace_id);
+    fn notify_config_change(&self, namespace_id: String, config_id: String) {
+        let _ = self.sender.send(ConfigChangeEvent {
+            namespace_id,
+            config_id,
+        });
     }
 
     /// 获取配置
@@ -175,7 +187,7 @@ impl ConfigManager {
         // 添加历史记录
         self.append_history(&entry).await?;
 
-        self.notify_config_change(entry.namespace_id.to_string());
+        self.notify_config_change(entry.namespace_id.to_string(), entry.id.to_string());
 
         Ok(())
     }
@@ -204,7 +216,7 @@ impl ConfigManager {
                 .remove(&(entry.namespace_id.to_string(), entry.id.to_string()));
         }
 
-        self.notify_config_change(entry.namespace_id.to_string());
+        self.notify_config_change(entry.namespace_id.to_string(), entry.id.to_string());
 
         Ok(())
     }

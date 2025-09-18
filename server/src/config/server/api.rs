@@ -151,25 +151,25 @@ async fn list_history(
 }
 
 /// 监听配置变化。
-/// 返回true时，表示配置有变化，由客户端调用`config/get`接口重新拉取配置
+/// 返回值不为None时，表示配置有变化，由客户端调用`config/get`接口重新拉取配置
 /// 客户端也应该定时从`config/get`拉取配置，作为补偿操作。
 #[get("/watch?<namespace_id>")]
-async fn watch(namespace_id: &str) -> Res<bool> {
+async fn watch(namespace_id: &str) -> Res<Option<String>> {
     let mut receiver = get_app().config_app.manager.sender.subscribe();
     // 客户端超时时间为30秒，这里设置为29秒，留1秒防止客户端超时报错。
     let res = tokio::time::timeout(std::time::Duration::from_secs(29), async {
         match receiver.recv().await {
-            Ok(id) => {
-                if id == namespace_id {
-                    log::info!("config changed, namespace id: {}", id);
-                    Res::success(true)
+            Ok(event) => {
+                if event.namespace_id == namespace_id {
+                    log::info!("config changed, namespace id: {}", event.namespace_id);
+                    Res::success(Some(event.config_id))
                 } else {
-                    Res::success(false)
+                    Res::success(None)
                 }
             }
-            Err(_) => Res::success(false),
+            Err(_) => Res::success(None),
         }
     })
     .await;
-    res.unwrap_or_else(|_| Res::success(false))
+    res.unwrap_or_else(|_| Res::success(None))
 }
