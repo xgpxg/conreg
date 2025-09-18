@@ -14,6 +14,7 @@ conreg:
     # 配置ID
     config-ids:
       - test.yaml
+      - test2.yml
   # 注册中心
   discovery:
     # 注册中心地址

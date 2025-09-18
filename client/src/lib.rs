@@ -171,9 +171,17 @@
 //! ```
 //!
 //! # 负载均衡
-//! conreg-client基于reqwest提供了负载均衡客户端，支持使用lb://service_id格式的自定义协议发起请求。
+//! conreg-client基于`reqwest`提供了负载均衡客户端，支持使用`lb://service_id`格式的自定义协议发起请求。
 //!
 //! 参考：[`lb`]
+//!
+//! # 监听配置变更
+//! 为指定的config_id添加处理函数，在配置变更时，会调用该函数。
+//! ```rust
+//! AppConfig::add_listener("test.yaml", |config| {
+//!     println!("Config changed, new config: {:?}", config);
+//! });
+//! ```
 
 use crate::conf::{ConRegConfig, ConRegConfigWrapper};
 use crate::config::Configs;
@@ -181,6 +189,7 @@ use crate::discovery::{Discovery, DiscoveryClient};
 pub use crate::protocol::Instance;
 use anyhow::bail;
 use serde::de::DeserializeOwned;
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::process::exit;
 use std::sync::{Arc, OnceLock, RwLock};
@@ -343,6 +352,14 @@ impl AppConfig {
             }
         }
     }
+
+    /// 添加配置监听器
+    ///
+    /// - `config_id`: 配置ID
+    /// - `handler`: 配置监函数，参数为变更后、已合并并展平后的配置内容
+    pub fn add_listener(config_id: &str, handler: fn(&HashMap<String, serde_yaml::Value>)) {
+        Configs::add_listener(config_id, handler);
+    }
 }
 
 pub struct AppDiscovery;
@@ -397,6 +414,12 @@ mod tests {
         let my_config = AppConfig::bind::<MyConfig>().unwrap();
         println!("my config, name: {:?}", my_config.name);
 
+        AppConfig::add_listener("test.yaml", |config| {
+            println!("Listen config change1: {:?}", config);
+        });
+        AppConfig::add_listener("test.yaml", |config| {
+            println!("Listen config change2: {:?}", config);
+        });
         let h = tokio::spawn(async move {
             loop {
                 println!("{:?}", AppConfig::get::<String>("name"));

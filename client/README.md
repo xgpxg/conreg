@@ -176,3 +176,18 @@ async fn main() {
     println!("service instances: {:?}", instances);
 }
  ```
+
+# 负载均衡
+
+conreg-client基于`reqwest`提供了负载均衡客户端，支持使用`lb://service_id`格式的自定义协议发起请求。
+参考：[lb](https://docs.rs/conreg-client/latest/conreg_client/lb/index.html)
+
+# 监听配置变更
+
+为指定的config_id添加处理函数，在配置变更时，会调用该函数。
+
+```rust
+AppConfig::add_listener("test.yaml", |config| {
+println!("Config changed, new config: {:?}", config);
+});
+```

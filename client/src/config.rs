@@ -3,12 +3,15 @@ use crate::network::HTTP;
 use crate::protocol::request::{GetConfigReq, WatchConfigChangeReq};
 use crate::{AppConfig, ConRegConfig};
 use anyhow::Context;
+use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
 use serde_yaml::{Mapping, Value, from_str};
 use std::collections::HashMap;
+use std::sync::LazyLock;
 use std::time::Duration;
 
 pub struct ConfigClient {
+    // 配置的配置😅
     config: ConfigConfig,
 }
 
@@ -90,9 +93,9 @@ impl ConfigClient {
             };
 
             loop {
-                match HTTP.get::<bool>(&url, &query).await {
-                    Ok(changed) => {
-                        if !changed {
+                match HTTP.get::<Option<String>>(&url, &query).await {
+                    Ok(changed_config_id) => {
+                        if changed_config_id.is_none() {
                             log::info!("config no changed");
                             continue;
                         }
@@ -109,8 +112,17 @@ impl ConfigClient {
                                 .unwrap(),
                             );
                         }
-                        AppConfig::reload(Configs::from_contents(contents).unwrap());
+                        // 新配置
+                        let config = Configs::from_contents(contents).unwrap();
+                        // 展平后的配置
+                        let new_configs = config.get_all().clone();
+
+                        // 重新加载
+                        AppConfig::reload(config);
                         log::info!("config reloaded");
+
+                        // 通知listeners配置变更
+                        Self::notify_config_change(&changed_config_id.unwrap(), &new_configs)
                     }
                     Err(e) => {
                         log::error!("watch config changes error: {}", e.to_string());
@@ -156,13 +168,36 @@ impl ConfigClient {
         });
         Ok(())
     }
+
+    /// 配置变更通知
+    fn notify_config_change(config_id: &str, changed_configs: &HashMap<String, Value>) {
+        let listeners = CONFIG_LISTENER.listeners.get(config_id);
+        if let Some(listeners) = listeners {
+            if !listeners.is_empty() {
+                for handler in &*listeners {
+                    handler(&changed_configs)
+                }
+            }
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Configs {
+    /// 展平后的配置
     pub configs: HashMap<String, Value>,
+    /// 配置内容，目前为yaml格式
     pub content: Value,
 }
+
+/// 配置变更监听
+struct ConfigListener {
+    /// key为配置ID，value为监听函数
+    listeners: DashMap<String, Vec<fn(&HashMap<String, Value>)>>,
+}
+static CONFIG_LISTENER: LazyLock<ConfigListener> = LazyLock::new(|| ConfigListener {
+    listeners: DashMap::new(),
+});
 
 impl Configs {
     fn from_contents(contents: Vec<String>) -> anyhow::Result<Self> {
@@ -252,6 +287,17 @@ impl Configs {
     #[allow(unused)]
     pub fn contains(&self, key: &str) -> bool {
         self.configs.contains_key(key)
+    }
+
+    /// 添加配置监听器
+    pub fn add_listener(config_id: &str, handler: fn(&HashMap<String, Value>)) {
+        if let Some(mut handlers) = CONFIG_LISTENER.listeners.get_mut(config_id) {
+            handlers.push(handler);
+        } else {
+            CONFIG_LISTENER
+                .listeners
+                .insert(config_id.to_string(), vec![handler]);
+        }
     }
 }
 
