@@ -56,6 +56,13 @@ jobs:
           cd target/x86_64-unknown-linux-musl/release
           tar -czf conreg-server.tar.gz conreg-server
 
+      # 生成变更日志
+      - name: Generate changelog
+        id: changelog
+        uses: metcalfc/changelog-generator@v4
+        with:
+          myToken: ${{ secrets.GITHUB_TOKEN }}
+
       # 创建 Release
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -63,5 +70,6 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
           files: target/x86_64-unknown-linux-musl/release/conreg-server.tar.gz
+          body: ${{ steps.changelog.outputs.changelog }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
