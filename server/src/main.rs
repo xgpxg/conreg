@@ -7,7 +7,7 @@ use clap::{Parser, ValueEnum};
 use rocket::Config;
 use rocket::data::{ByteUnit, Limits};
 use rocket::fairing::AdHoc;
-use std::collections::BTreeSet;
+use std::collections::BTreeMap;
 use std::fs;
 use std::net::IpAddr;
 use std::path::Path;
@@ -169,12 +169,17 @@ fn init_log() {
 
 pub(crate) async fn after_http_server_start(args: &Args) -> anyhow::Result<()> {
     match args.mode {
-        #[rustfmt::skip]
         Mode::Standalone => {
             let app = get_app();
             let is_initialized = app.raft.is_initialized().await?;
             if !is_initialized {
-                app.raft.initialize(BTreeSet::from([args.node_id])).await?;
+                let node_info = vec![(
+                    args.node_id,
+                    openraft::BasicNode {
+                        addr: format!("{}:{}", args.address, args.port),
+                    },
+                )];
+                app.raft.initialize(BTreeMap::from_iter(node_info)).await?;
             }
             let is_initialized = app.raft.is_initialized().await?;
             log::info!("┌─────────────────────────────────────────────────┐");
