@@ -41,9 +41,9 @@ struct RegisterServiceInstanceReq {
     port: u16,
     meta: HashMap<String, String>,
 }
-impl Into<ServiceInstance> for RegisterServiceInstanceReq {
-    fn into(self) -> ServiceInstance {
-        ServiceInstance::new(&self.service_id, &self.ip, self.port, self.meta)
+impl From<RegisterServiceInstanceReq> for ServiceInstance {
+    fn from(value: RegisterServiceInstanceReq) -> Self {
+        ServiceInstance::new(&value.service_id, &value.ip, value.port, value.meta)
     }
 }
 

@@ -245,7 +245,7 @@ impl Conreg {
         utils::init_log();
 
         if config.config.is_some() {
-            let config_client = config::ConfigClient::new(&config);
+            let config_client = config::ConfigClient::new(config);
             let configs = config_client.load().await?;
             CONFIGS.set(Arc::new(RwLock::new(configs))).map_err(|_| {
                 anyhow::anyhow!(

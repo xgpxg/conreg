@@ -147,7 +147,7 @@ async fn promote_nodes(server: &str, node_ids: &Vec<u64>) -> anyhow::Result<()> 
         .membership_config
         .membership
         .configs
-        .get(0)
+        .first()
         .cloned()
         .unwrap_or(Vec::new());
     let ids = [exiting_node_ids.as_slice(), node_ids.as_slice()].concat();
@@ -175,7 +175,7 @@ async fn remove_node(server: &str, node_id: u64) -> anyhow::Result<()> {
         .membership_config
         .membership
         .configs
-        .get(0)
+        .first()
         .cloned()
         .unwrap_or(Vec::new());
     if !exiting_node_ids.contains(&node_id) {
@@ -253,13 +253,15 @@ async fn monitor_cluster(server: &str, interval: u64) -> anyhow::Result<()> {
             Ok(status) => {
                 print_status(&status);
             }
-            Err(_) => {}
+            Err(e) => {
+                println!("Failed to get cluster status: {}", e);
+            }
         }
 
         tokio::time::sleep(tokio::time::Duration::from_secs(interval)).await;
         if cfg!(target_os = "windows") {
             std::process::Command::new("cmd")
-                .args(&["/C", "cls"])
+                .args(["/C", "cls"])
                 .status()?;
         } else {
             std::process::Command::new("clear").status()?;

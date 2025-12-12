@@ -2,6 +2,7 @@ use crate::discovery::server::DiscoveryManager;
 use std::process::exit;
 use tracing::log;
 
+#[allow(clippy::module_inception)]
 mod discovery;
 pub mod server;
 use crate::Args;

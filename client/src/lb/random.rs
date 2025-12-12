@@ -4,12 +4,6 @@ use crate::lb::{LoadBalance, LoadBalanceError};
 #[derive(Debug, Default)]
 pub struct RandomLoadBalance;
 
-impl RandomLoadBalance {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-
 impl LoadBalance for RandomLoadBalance {
     async fn get_instance(&self, service_id: &str) -> Result<Instance, LoadBalanceError> {
         let instances = self.instances(service_id).await?;

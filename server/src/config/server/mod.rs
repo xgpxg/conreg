@@ -85,13 +85,12 @@ impl ConfigManager {
         namespace_id: &str,
         config_id: &str,
     ) -> anyhow::Result<Option<ConfigEntry>> {
-        if self.args.enable_cache_config {
-            if let Some(config) = self
+        if self.args.enable_cache_config
+            && let Some(config) = self
                 .config_cache
                 .get(&(namespace_id.to_string(), config_id.to_string()))
-            {
-                return Ok(config.clone());
-            }
+        {
+            return Ok(config.clone());
         }
         let config: Option<ConfigEntry> =
             sqlx::query_as("SELECT * FROM config WHERE namespace_id = ? AND id = ?")
@@ -172,14 +171,14 @@ impl ConfigManager {
         sqlx::query(
             "INSERT INTO config (id_, namespace_id, id, content, description,format, create_time, update_time, md5) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
-            .bind(&entry.id_)
+            .bind(entry.id_)
             .bind(&entry.namespace_id)
             .bind(&entry.id)
             .bind(&entry.content)
             .bind(&entry.description)
             .bind(&entry.format)
-            .bind(&entry.create_time)
-            .bind(&entry.update_time)
+            .bind(entry.create_time)
+            .bind(entry.update_time)
             .bind(&entry.md5)
             .execute(DbPool::get())
             .await?;
@@ -201,10 +200,10 @@ impl ConfigManager {
         )
             .bind(&entry.content)
             .bind(&entry.description)
-            .bind(&entry.update_time)
+            .bind(entry.update_time)
             .bind(&entry.format)
             .bind(&entry.md5)
-            .bind(&entry.id_)
+            .bind(entry.id_)
             .execute(DbPool::get())
             .await?;
 
@@ -275,13 +274,13 @@ impl ConfigManager {
             "INSERT INTO config_history (id_, namespace_id, id, content, description, create_time, update_time, md5) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         )
             // 注意这个ID，不能自增或随机生成，需要从entry中计算而来，以保证多节点下的数据的一致性
-            .bind(&entry.id_ + entry.update_time.timestamp_millis())
+            .bind(entry.id_ + entry.update_time.timestamp_millis())
             .bind(&entry.namespace_id)
             .bind(&entry.id)
             .bind(&entry.content)
             .bind(&entry.description)
-            .bind(&entry.create_time)
-            .bind(&entry.update_time)
+            .bind(entry.create_time)
+            .bind(entry.update_time)
             .bind(&entry.md5)
             .execute(DbPool::get())
             .await?;
@@ -291,8 +290,8 @@ impl ConfigManager {
 
     pub async fn delete_history(&self, namespace_id: &str, id: &str) -> anyhow::Result<()> {
         sqlx::query("DELETE FROM config_history WHERE namespace_id = ? AND id = ?")
-            .bind(&namespace_id)
-            .bind(&id)
+            .bind(namespace_id)
+            .bind(id)
             .execute(DbPool::get())
             .await?;
         Ok(())
@@ -350,11 +349,11 @@ impl ConfigManager {
         let mut query_sql = "SELECT * FROM config WHERE namespace_id = ?".to_string();
         let mut count_sql = "SELECT COUNT(1) FROM config WHERE namespace_id = ?".to_string();
 
-        if let Some(filter) = filter_text.as_ref() {
-            if !filter.is_empty() {
-                query_sql.push_str(" AND (id LIKE ? OR content LIKE ?)");
-                count_sql.push_str(" AND (id LIKE ? OR content LIKE ?)");
-            }
+        if let Some(filter) = filter_text.as_ref()
+            && !filter.is_empty()
+        {
+            query_sql.push_str(" AND (id LIKE ? OR content LIKE ?)");
+            count_sql.push_str(" AND (id LIKE ? OR content LIKE ?)");
         }
 
         query_sql.push_str(" ORDER BY id_ DESC LIMIT ?, ?");
@@ -362,16 +361,16 @@ impl ConfigManager {
         let mut query = sqlx::query_as(&query_sql).bind(namespace_id);
         let mut count_query = sqlx::query_scalar(&count_sql).bind(namespace_id);
 
-        if let Some(filter) = filter_text {
-            if !filter.is_empty() {
-                let filter_pattern = format!("%{}%", filter);
-                query = query
-                    .bind(filter_pattern.clone())
-                    .bind(filter_pattern.clone());
-                count_query = count_query
-                    .bind(filter_pattern.clone())
-                    .bind(filter_pattern.clone());
-            }
+        if let Some(filter) = filter_text
+            && !filter.is_empty()
+        {
+            let filter_pattern = format!("%{}%", filter);
+            query = query
+                .bind(filter_pattern.clone())
+                .bind(filter_pattern.clone());
+            count_query = count_query
+                .bind(filter_pattern.clone())
+                .bind(filter_pattern.clone());
         }
 
         let offset = (page_num - 1) * page_size;

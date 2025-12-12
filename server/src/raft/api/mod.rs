@@ -87,7 +87,7 @@ async fn forward_request_to_leader(
 #[macro_export]
 macro_rules! handle_raft_error {
     ($e:expr, $forward_request:expr) => {{
-        use crate::protocol::res::Res;
+        use $crate::protocol::res::Res;
         match $e {
             RaftError::APIError(err) => match err {
                 // 转发到Leader节点处理

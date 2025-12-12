@@ -11,7 +11,7 @@ pub enum Event {
 }
 
 impl Event {
-    pub fn send(self) -> Result<(), mpsc::error::SendError<Event>> {
+    pub fn send(self) -> Result<(), Box<mpsc::error::SendError<Event>>> {
         EVENT_BUS.send(self)
     }
 }
@@ -32,12 +32,12 @@ impl EventBus {
         Self { sender }
     }
 
-    pub fn send(&self, event: Event) -> Result<(), mpsc::error::SendError<Event>> {
-        self.sender.send(event)
+    pub fn send(&self, event: Event) -> Result<(), Box<mpsc::error::SendError<Event>>> {
+        self.sender.send(event).map_err(Box::new)
     }
 }
 
-static EVENT_BUS: LazyLock<EventBus> = LazyLock::new(|| EventBus::new());
+static EVENT_BUS: LazyLock<EventBus> = LazyLock::new(EventBus::new);
 
 pub struct EventHandler {
     receiver: mpsc::UnboundedReceiver<Event>,

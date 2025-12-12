@@ -125,7 +125,7 @@ impl ConfigClient {
                         Self::notify_config_change(&changed_config_id.unwrap(), &new_configs)
                     }
                     Err(e) => {
-                        log::error!("watch config changes error: {}", e.to_string());
+                        log::error!("watch config changes error: {}", e);
                         // when some error, sleep 0.5s and retry
                         tokio::time::sleep(Duration::from_millis(500)).await;
                     }
@@ -172,11 +172,11 @@ impl ConfigClient {
     /// 配置变更通知
     fn notify_config_change(config_id: &str, changed_configs: &HashMap<String, Value>) {
         let listeners = CONFIG_LISTENER.listeners.get(config_id);
-        if let Some(listeners) = listeners {
-            if !listeners.is_empty() {
-                for handler in &*listeners {
-                    handler(&changed_configs)
-                }
+        if let Some(listeners) = listeners
+            && !listeners.is_empty()
+        {
+            for handler in &*listeners {
+                handler(changed_configs)
             }
         }
     }
@@ -190,10 +190,11 @@ pub struct Configs {
     pub content: Value,
 }
 
+type ConfigListeners = DashMap<String, Vec<fn(&HashMap<String, Value>)>>;
 /// 配置变更监听
 struct ConfigListener {
     /// key为配置ID，value为监听函数
-    listeners: DashMap<String, Vec<fn(&HashMap<String, Value>)>>,
+    listeners: ConfigListeners,
 }
 static CONFIG_LISTENER: LazyLock<ConfigListener> = LazyLock::new(|| ConfigListener {
     listeners: DashMap::new(),

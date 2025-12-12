@@ -71,7 +71,7 @@ pub enum HeartbeatResult {
 impl ServiceInstance {
     pub fn new(service_id: &str, ip: &str, port: u16, meta: HashMap<String, String>) -> Self {
         ServiceInstance {
-            id: Self::generate_id(&ip, port),
+            id: Self::generate_id(ip, port),
             service_id: service_id.to_string(),
             ip: ip.to_string(),
             port,
@@ -194,7 +194,7 @@ impl Discovery {
             .services
             .get(service_id)
             .map(|item| item.value().clone())
-            .unwrap_or_else(|| vec![]);
+            .unwrap_or_default();
         Ok(list)
     }
 
@@ -207,7 +207,7 @@ impl Discovery {
             .services
             .get(service_id)
             .map(|item| item.value().clone())
-            .unwrap_or_else(|| vec![])
+            .unwrap_or_default()
             .iter()
             .filter(|item| item.is_available())
             .cloned()

@@ -103,10 +103,10 @@ where
                 ))
             })?);
 
-            if let Some(end_val) = end {
-                if id >= end_val {
-                    break;
-                }
+            if let Some(end_val) = end
+                && id >= end_val
+            {
+                break;
             }
 
             if !range.contains(&id) {
@@ -207,7 +207,7 @@ where
             let id = entry.get_log_id().index;
             let serialized =
                 serde_json::to_vec(&entry).map_err(|e| StorageIOError::write_logs(&e))?;
-            tree.insert(&id.to_be_bytes(), serialized)
+            tree.insert(id.to_be_bytes(), serialized)
                 .map_err(|e| StorageIOError::write_logs(&e))?;
         }
 

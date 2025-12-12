@@ -21,22 +21,17 @@ use reqwest::{Client, Method, RequestBuilder, Url};
 use std::time::Duration;
 
 /// 负载均衡策略
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub enum LoadBalanceStrategy {
     /// 轮询
     RoundRobin,
     /// 加权轮询
     WeightedRoundRobin,
     /// 随机
+    #[default]
     Random,
     /// 加权随机
     WeightedRandom,
-}
-
-impl Default for LoadBalanceStrategy {
-    fn default() -> Self {
-        Self::Random
-    }
 }
 
 impl LoadBalanceStrategy {
@@ -102,7 +97,7 @@ impl LoadBalanceClient {
         Self {
             client,
             strategies: Default::default(),
-            random_lb: RandomLoadBalance::default(),
+            random_lb: RandomLoadBalance,
             weight_random_lb: WeightRandomLoadBalance::default(),
             round_robin_lb: RoundRobinLoadBalance::default(),
             weight_round_robin_lb: WeightRoundRobinLoadBalance::default(),

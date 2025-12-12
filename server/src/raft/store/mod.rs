@@ -73,7 +73,7 @@ impl StateMachineStore {
     }
 
     /// 应用每一个日志条目
-    async fn apply_entry(self: &mut Self, entry: Entry) -> Result<RaftResponse, StorageError> {
+    async fn apply_entry(&mut self, entry: Entry) -> Result<RaftResponse, StorageError> {
         let mut state_machine = self.state_machine.write().await;
 
         // 更新last_applied_log，注意这里没有持久化，而是等待日志条目数量达到一定值时触发状态机持久化时才会持久化状态。
@@ -290,6 +290,7 @@ impl RaftStateMachine<TypeConfig> for StateMachineStore {
     /// 该快照包含2部分：
     /// - 元数据：元数据包含了last_log_id和last_membership
     /// - 快照数据
+    ///
     /// 重启时可通过次快照恢复
     async fn get_current_snapshot(&mut self) -> Result<Option<Snapshot<TypeConfig>>, StorageError> {
         let sm_meta_tree = self

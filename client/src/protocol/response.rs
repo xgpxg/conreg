@@ -8,20 +8,15 @@ pub(crate) struct Res<T> {
     pub data: Option<T>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub(crate) enum HeartbeatResult {
     /// Ok
     Ok,
     /// 找不到实例，需要重新注册服务实例
     NoInstanceFound,
     /// 未知结果，可能出现在客户端和服务端版本不兼容时
+    #[default]
     Unknown,
-}
-
-impl Default for HeartbeatResult {
-    fn default() -> Self {
-        HeartbeatResult::Unknown
-    }
 }
 
 impl From<String> for HeartbeatResult {

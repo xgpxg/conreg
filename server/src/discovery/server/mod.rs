@@ -220,16 +220,13 @@ impl DiscoveryManager {
         .await?;
         for service in rows.iter_mut() {
             let mut state = State::default();
-            match self.discoveries.get(namespace_id) {
-                Some(discovery) => {
-                    state.total_instances = discovery
-                        .get_service_instances(service.service_id.as_str())?
-                        .len();
-                    state.up_instances = discovery
-                        .get_available_service_instances(service.service_id.as_str())?
-                        .len();
-                }
-                None => {}
+            if let Some(discovery) = self.discoveries.get(namespace_id) {
+                state.total_instances = discovery
+                    .get_service_instances(service.service_id.as_str())?
+                    .len();
+                state.up_instances = discovery
+                    .get_available_service_instances(service.service_id.as_str())?
+                    .len();
             };
             service.state = state;
         }
@@ -329,8 +326,8 @@ impl DiscoveryManager {
         instance_id: &str,
     ) -> anyhow::Result<()> {
         let discovery = self.try_get_discovery(namespace_id).await?;
-        let instances = discovery.deregister_instance(service_id, instance_id)?;
-        Ok(instances)
+        discovery.deregister_instance(service_id, instance_id)?;
+        Ok(())
     }
 
     /// 获取服务实例

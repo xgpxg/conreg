@@ -71,13 +71,13 @@ impl App {
         let addr = format!("{}:{}", args.address, args.port);
 
         // 配置中心实例
-        let config_app = config::new_config_app(&args).await;
+        let config_app = config::new_config_app(args).await;
 
         // 命名空间实例
-        let namespace_app = namespace::new_namespace_app(&args).await;
+        let namespace_app = namespace::new_namespace_app(args).await;
 
         // 服务发现实例
-        let discovery_app = discovery::new_discovery_app(&args).await;
+        let discovery_app = discovery::new_discovery_app(args).await;
 
         App {
             id: args.node_id,

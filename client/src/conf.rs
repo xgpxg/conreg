@@ -50,18 +50,13 @@ impl ConRegConfig {
     }
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Default, Deserialize, Clone)]
 #[serde(untagged)]
 pub enum ServerAddr {
     Single(String),
     Cluster(Vec<String>),
+    #[default]
     Unset,
-}
-
-impl Default for ServerAddr {
-    fn default() -> Self {
-        ServerAddr::Unset
-    }
 }
 
 impl From<&str> for ServerAddr {

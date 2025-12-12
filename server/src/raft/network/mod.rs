@@ -127,19 +127,14 @@ where
         InstallSnapshotResponse<C::NodeId>,
         RPCError<C::NodeId, C::Node, RaftError<C::NodeId, InstallSnapshotError>>,
     > {
-        let res = self
-            .request::<_, _, Infallible>("snapshot", req)
+        self.request::<_, _, Infallible>("snapshot", req)
             .await
             .map_err(|e| match e {
                 RPCError::Unreachable(u) => RPCError::Unreachable(u),
                 RPCError::Network(n) => RPCError::Network(n),
-                _ => RPCError::Network(NetworkError::new(&std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    "Unknown error",
-                ))),
+                _ => RPCError::Network(NetworkError::new(&std::io::Error::other("Unknown error"))),
             })?
-            .unwrap();
-        res
+            .unwrap()
     }
 
     /// 发起投票
@@ -148,13 +143,7 @@ where
         req: VoteRequest<C::NodeId>,
         _option: RPCOption,
     ) -> Result<VoteResponse<C::NodeId>, RPCError<C::NodeId, C::Node, RaftError<C::NodeId>>> {
-        let res = self
-            .request::<_, _, Infallible>("vote", req)
-            .await
-            .map_err(|e| {
-                log::error!("vte error: {}", e);
-                RPCError::from(e)
-            })?;
+        let res = self.request::<_, _, Infallible>("vote", req).await?;
         Ok(res.unwrap())
     }
 }
