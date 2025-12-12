@@ -1,3 +1,3 @@
 [workspace]
 resolver = "3"
-members = ["server", "client", "cmt"]
+members = ["conreg-server", "conreg-client", "conreg-cmt"]
