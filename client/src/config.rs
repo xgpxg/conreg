@@ -122,7 +122,10 @@ impl ConfigClient {
                         log::info!("config reloaded");
 
                         // 通知listeners配置变更
-                        Self::notify_config_change(&changed_config_id.unwrap(), &new_configs)
+                        Self::notify_config_change(
+                            &changed_config_id.unwrap(), // SAFE: 已经校验了None
+                            &new_configs,
+                        );
                     }
                     Err(e) => {
                         log::error!("watch config changes error: {}", e);

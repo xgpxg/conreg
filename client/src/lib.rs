@@ -302,6 +302,7 @@ pub async fn init_with(config: ConRegConfig) {
     };
 }
 
+/// 应用配置
 pub struct AppConfig;
 impl AppConfig {
     fn reload(configs: Configs) {
@@ -316,6 +317,8 @@ impl AppConfig {
     }
 
     /// 获取配置值
+    ///
+    /// `key`为配置项的key，如`app.name`等。
     ///
     /// 注意：获取的值类型需要与配置中的值类型保持一致，如果不一致，可能会导致转换失败，
     /// 转换失败时将返回`None`
@@ -338,25 +341,10 @@ impl AppConfig {
         }
     }
 
-    /// 绑定配置内容到一个struct。
-    pub fn bind<T: DeserializeOwned>() -> anyhow::Result<T> {
-        match CONFIGS.get() {
-            None => {
-                bail!("config not init");
-            }
-            Some(config) => {
-                let value: T = serde_yaml::from_value(
-                    config.read().expect("read lock error").content.clone(),
-                )?;
-                Ok(value)
-            }
-        }
-    }
-
     /// 添加配置监听器
     ///
     /// - `config_id`: 配置ID
-    /// - `handler`: 配置监函数，参数为变更后、已合并并展平后的配置内容
+    /// - `handler`: 配置监听函数，参数为变更后、已合并并展平后的配置内容
     pub fn add_listener(config_id: &str, handler: fn(&HashMap<String, serde_yaml::Value>)) {
         Configs::add_listener(config_id, handler);
     }
@@ -407,17 +395,10 @@ mod tests {
         println!("{:?}", AppConfig::get::<String>("name"));
         println!("{:?}", AppConfig::get::<u32>("age"));
 
-        #[derive(Deserialize)]
-        struct MyConfig {
-            name: String,
-        }
-        let my_config = AppConfig::bind::<MyConfig>().unwrap();
-        println!("my config, name: {:?}", my_config.name);
-
         AppConfig::add_listener("test.yaml", |config| {
             println!("Listen config change1: {:?}", config);
         });
-        AppConfig::add_listener("test.yaml", |config| {
+        AppConfig::add_listener("test2.yml", |config| {
             println!("Listen config change2: {:?}", config);
         });
         let h = tokio::spawn(async move {
