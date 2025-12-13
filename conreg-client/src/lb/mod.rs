@@ -1,32 +1,32 @@
-//! # 负载均衡组件
+//! # Load Balance Component
 //!
 //! ## [`RandomLoadBalance`]
-//! 随机：从可用服务列表中随机选择一个。
+//! Random: Select one randomly from the list of available services.
 //!
 //! ## [`RoundRobinLoadBalance`]
-//! 轮询：从服务列表中按顺序轮询选择。
+//! Round Robin: Select from the service list in sequential order.
 //!
 //! ## [`WeightRandomLoadBalance`]
-//! 加权随机：从服务列表中按权重进行轮询选择。
+//! Weighted Random: Select from the service list according to weights.
 //!
 //! ## [`WeightRoundRobinLoadBalance`]
-//! 加权轮询：从服务列表中按权重进行轮询选择。
+//! Weighted Round Robin: Select from the service list according to weights.
 //!
-//! ## 关于权重
-//! 权重可通过服务的元数据进行设置，通常建议权重范围为1-100。
+//! ## About Weights
+//! Weights can be set through service metadata, typically with a suggested weight range of 1-100.
 //!
 //! # Usage
 //! ```rust
-//! // 初始化Discovery
+//! // Initialize Discovery
 //! let _ = init().await;
 //!
-//! // 创建负载均衡客户端
+//! // Create a load balance client
 //! let mut client = LoadBalanceClient::new();
 //!
-//! // 设置某个服务的负载均衡策略
+//! // Set the load balancing strategy for a service
 //! client.set_strategy("your_service_id", LoadBalanceStrategy::Random);
 //!
-//! // 发起请求
+//! // Make a request
 //! let response = client
 //!     .get("lb://your_service_id/hello")
 //!     .await
@@ -50,7 +50,7 @@ pub use weight_random::WeightRandomLoadBalance;
 pub use weight_round::WeightRoundRobinLoadBalance;
 
 pub trait LoadBalance {
-    /// 获取服务实例列表
+    /// Get the list of service instances
     fn instances(
         &self,
         service_id: &str,
@@ -62,7 +62,7 @@ pub trait LoadBalance {
         }
     }
 
-    /// 获取服务实例
+    /// Get a service instance
     fn get_instance(
         &self,
         service_id: &str,
@@ -71,9 +71,9 @@ pub trait LoadBalance {
 
 #[derive(Debug)]
 pub enum LoadBalanceError {
-    /// 获取服务实例列表失败
+    /// Failed to get the list of service instances
     GetInstancesError(String),
-    /// 无可用实例
+    /// No available instance
     NoAvailableInstance(String),
 }
 

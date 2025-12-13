@@ -4,6 +4,7 @@
 ![Release](https://github.com/xgpxg/conreg/actions/workflows/publish.yml/badge.svg)
 ![GitHub release](https://img.shields.io/github/v/release/xgpxg/conreg?label=Version)
 ![Crates.io](https://img.shields.io/crates/d/conreg-client?label=conreg-client)
+![License](https://img.shields.io/github/license/xgpxg/conreg)
 
 [中文](README_zh.md) | [English](README.md)
 </div>

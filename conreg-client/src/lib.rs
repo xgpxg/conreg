@@ -1,67 +1,70 @@
-//! conreg是一个参考了Nacos设计的分布式服务注册和配置中心。详情请看：[conreg](https://github.com/xgpxg/conreg)
+//! # Conreg Client
 //!
-//! conreg-client是conreg的客户端SDK，用于集成到您的服务中和conreg-server通信。
+//! Conreg is a distributed service registry and configuration center designed with reference to Nacos. See details: [conreg](https://github.com/xgpxg/conreg)
 //!
-//! ℹ️ 注意：当前conreg的0.1.x版本仍处于快速迭代中，API在未来可能会发生变化
+//! conreg-client is the client SDK for conreg, used to integrate into your services and communicate with conreg-server.
 //!
-//! # 快速开始
+//! # Quick Start
 //!
-//! ## 基本使用
-//! 在项目的根目录下添加`bootstrap.yaml`配置文件：
+//! ## Basic Usage
+//!
+//! Add a `bootstrap.yaml` configuration file in your project's root directory:
+//!
 //! ```yaml
 //! conreg:
-//!   # 服务ID
-//!   # 服务ID是服务的唯一标识，同一命名空间下的服务ID不能重复
+//!   # Service ID is the unique identifier of the service. Service IDs in the same namespace cannot be duplicated.
 //!   service-id: test
-//!   # 客户端配置，这些信息将会作为服务实例的基本信息提交到注册中心
+//!   # Client configuration, this information will be submitted to the registry as basic information of the service instance
 //!   client:
-//!     # 监听地址
+//!     # Listening address
 //!     address: 127.0.0.1
-//!     # 端口
+//!     # Port
 //!     port: 8000
-//!   # 配置中心配置
+//!   # Configuration center configuration
 //!   config:
-//!     # 配置中心地址
+//!   # Configuration center address
 //!     server-addr: 127.0.0.1:8000
-//!     # 配置ID
-//!     # 如果多个配置中存在同名配置key，则靠后的配置将会覆盖之前的配置
+//!     # Configuration ID
+//!     # If there are duplicate configuration keys in multiple configurations, the latter configuration will overwrite the previous one
 //!     config-ids:
-//!       - test.yaml
-//!   # 注册中心配置
+//!     - test.yaml
+//!   # Registry configuration
 //!   discovery:
-//!     # 注册中心地址
+//!     # Registry address
 //!     server-addr:
 //!       - 127.0.0.1:8000
 //!       - 127.0.0.1:8001
 //!       - 127.0.0.1:8002
 //! ```
 //!
-//! 然后，在`main`函数中初始化：
+//! Then, initialize in the `main` function:
+//!
 //! ```rust
 //! #[tokio::main]
-//! async fn main(){
-//!     // 初始化
+//! async fn main() {
+//!     // Initialization
 //!     init().await;
-//!
-//!     // 获取配置项
+//!     // Get configuration item
 //!     println!("{:?}", AppConfig::get::<String>("name"));
-//!
-//!     // 获取服务实例
+//!     // Get service instances
 //!     let instances = AppDiscovery::get_instances("your_service_id").await.unwrap();
 //!     println!("service instances: {:?}", instances);
 //! }
 //! ```
 //!
-//! ## 命名空间
-//! conreg使用命名空间（Namespace）来对配置和服务进行隔离，默认命名空间为`public`。
+//! ## Namespace
 //!
-//! ## 配置中心
-//! 从配置中心中加载，并使用这些配置。目前仅支持`yaml`格式的配置。
+//! Conreg uses namespaces to isolate configurations and services. The default namespace is `public`.
 //!
-//! ### 初始化并加载配置
+//! ## Configuration Center
+//!
+//! Load and use configurations from the configuration center. Currently only `yaml` format configurations are supported.
+//!
+//! ### Initialize and Load Configuration
+//!
 //! ```rust
 //! #[tokio::main]
-//!  async fn main() {
+//! async fn main() {
 //!     init_with(
 //!         ConRegConfigBuilder::default()
 //!             .config(
@@ -74,18 +77,17 @@
 //!             )
 //!             .build()
 //!             .unwrap(),
-//!
 //!     )
-//!     .await;
+//!         .await;
 //!     println!("{:?}", AppConfig::get::<String>("name"));
 //!     println!("{:?}", AppConfig::get::<u32>("age"));
-//!  }
+//! }
 //! ```
 //!
-//! ### 从配置文件初始化
-//! conreg-client默认从项目根目录下的bootstrap.yaml加载配置初始化配置，就像SpringCloud一样。
+//! ### Initialize from Configuration File
 //!
-//! 以下是`bootstrap.yaml`配置示例
+//! By default, conreg-client loads configurations from the bootstrap.yaml file in the project root directory to initialize configurations, just like SpringCloud.
+//! The following is an example of `bootstrap.yaml` configuration:
 //!
 //! ```yaml
 //! conreg:
@@ -93,45 +95,47 @@
 //!     server-addr: 127.0.0.1:8000
 //!     config-ids:
 //!       - your_config.yaml
-//!
 //! ```
 //!
-//! 然后调用`init`方法即可初始化并获取配置内容。
-//! ```rust
-//! #[tokio::main]
-//!  async fn main() {
-//!     init().await;
-//!     // 或者指定配置文件路径
-//!     // init_from_file("config.yaml").await;
-//!     println!("{:?}", AppConfig::get::<String>("name"));
-//!     println!("{:?}", AppConfig::get::<u32>("age"));
-//!  }
-//! ```
+//! Then call the `init` method to initialize and get the configuration content.
 //!
-//! ## 注册中心
-//! 用于服务注册和发现。
-//!
-//! ### 初始化并加载配置
 //! ```rust
 //! #[tokio::main]
 //! async fn main() {
-//! let config = ConRegConfigBuilder::default()
-//!     .service_id("your_service_id")
-//!     .client(
-//!         ClientConfigBuilder::default()
-//!             .address("127.0.0.1")
-//!             .port(8080)
-//!             .build()
-//!             .unwrap(),
-//!     )
-//!     .discovery(
-//!         DiscoveryConfigBuilder::default()
-//!             .server_addr("127.0.0.1:8000")
-//!             .build()
-//!             .unwrap(),
-//!     )
-//!     .build()
-//!     .unwrap();
+//!     init().await;
+//!     // Or specify the configuration file path
+//!     // init_from_file("config.yaml").await;
+//!     println!("{:?}", AppConfig::get::<String>("name"));
+//!     println!("{:?}", AppConfig::get::<u32>("age"));
+//! }
+//! ```
+//!
+//! ## Registry Center
+//!
+//! Used for service registration and discovery.
+//!
+//! ### Initialize and Load Configuration
+//!
+//! ```rust
+//! #[tokio::main]
+//! async fn main() {
+//!     let config = ConRegConfigBuilder::default()
+//!         .service_id("your_service_id")
+//!         .client(
+//!             ClientConfigBuilder::default()
+//!                 .address("127.0.0.1")
+//!                 .port(8080)
+//!                 .build()
+//!                 .unwrap(),
+//!         )
+//!         .discovery(
+//!             DiscoveryConfigBuilder::default()
+//!                 .server_addr("127.0.0.1:8000")
+//!                 .build()
+//!                 .unwrap(),
+//!         )
+//!         .build()
+//!         .unwrap();
 //!     let service_id = config.service_id.clone();
 //!     init_with(config).await;
 //!     let instances = AppDiscovery::get_instances(&service_id).await.unwrap();
@@ -139,11 +143,11 @@
 //! }
 //! ```
 //!
-//! ### 从配置文件初始化
+//! ### Initialize from Configuration File
 //!
-//! 默认从`bootstrap.yaml`中加载配置。
+//! By default, configurations are loaded from `bootstrap.yaml`.
+//! The following is an example configuration:
 //!
-//! 以下是示例配置：
 //! ```yaml
 //! conreg:
 //!   service-id: your_service_id
@@ -156,30 +160,32 @@
 //!       - 127.0.0.1:8001
 //!       - 127.0.0.1:8002
 //! ```
+//!
 //! ```rust
 //! #[tokio::main]
-//!  async fn main() {
+//! async fn main() {
 //!     init().await;
-//!     // 或者指定配置文件路径
+//!     // Or specify the configuration file path
 //!     // init_from_file("config.yaml").await;
 //!     init_with(config).await;
-//!
 //!     let service_id = "your_service_id";
 //!     let instances = AppDiscovery::get_instances(service_id).await.unwrap();
 //!     println!("service instances: {:?}", instances);
-//!  }
+//! }
 //! ```
 //!
-//! # 负载均衡
-//! conreg-client基于`reqwest`提供了负载均衡客户端，支持使用`lb://service_id`格式的自定义协议发起请求。
+//! # Load Balancing
 //!
-//! 参考：[`lb`]
+//! conreg-client provides a load balancing client based on `reqwest`, supporting custom protocol requests in the format `lb://service_id`.
+//! Reference: [lb](https://docs.rs/conreg-client/latest/conreg_client/lb/index.html)
 //!
-//! # 监听配置变更
-//! 为指定的config_id添加处理函数，在配置变更时，会调用该函数。
+//! # Listen for Configuration Changes
+//!
+//! Add a handler function for the specified config_id, which will be called when the configuration changes.
+//!
 //! ```rust
 //! AppConfig::add_listener("test.yaml", |config| {
-//!     println!("Config changed, new config: {:?}", config);
+//! println!("Config changed, new config: {:?}", config);
 //! });
 //! ```
 
@@ -204,13 +210,13 @@ mod utils;
 
 struct Conreg;
 
-/// 存储配置内容
+/// Store configuration content
 static CONFIGS: OnceLock<Arc<RwLock<Configs>>> = OnceLock::new();
 /// 服务发现全局实例
 static DISCOVERY: OnceLock<Discovery> = OnceLock::new();
 
 impl Conreg {
-    /// 初始化配置中心和注册中心
+    /// Initialize configuration center and registry center
     async fn init(file: Option<PathBuf>) -> anyhow::Result<()> {
         let mut file = file.unwrap_or("bootstrap.yaml".into());
         if !file.exists() {
@@ -269,7 +275,7 @@ impl Conreg {
     }
 }
 
-/// 初始化配置中心和注册中心
+/// Initialize configuration center and registry center
 pub async fn init() {
     match Conreg::init(None).await {
         Ok(_) => {}
@@ -280,7 +286,7 @@ pub async fn init() {
     };
 }
 
-/// 从配置文件初始化配置中心和注册中心
+/// Initialize configuration center and registry center from configuration file
 pub async fn init_from_file(path: impl Into<PathBuf>) {
     match Conreg::init(Some(path.into())).await {
         Ok(_) => {}
@@ -291,7 +297,7 @@ pub async fn init_from_file(path: impl Into<PathBuf>) {
     };
 }
 
-/// 从自定义配置初始化
+/// Initialize from custom configuration
 pub async fn init_with(config: ConRegConfig) {
     match Conreg::init_with(&config).await {
         Ok(_) => {}
@@ -302,7 +308,7 @@ pub async fn init_with(config: ConRegConfig) {
     };
 }
 
-/// 应用配置
+/// Application Configuration
 pub struct AppConfig;
 impl AppConfig {
     fn reload(configs: Configs) {
@@ -316,12 +322,12 @@ impl AppConfig {
         }
     }
 
-    /// 获取配置值
+    /// Get configuration value
     ///
-    /// `key`为配置项的key，如`app.name`等。
+    /// `key` is the key of the configuration item, such as `app.name`.
     ///
-    /// 注意：获取的值类型需要与配置中的值类型保持一致，如果不一致，可能会导致转换失败，
-    /// 转换失败时将返回`None`
+    /// Note: The type of the obtained value needs to be consistent with the type of the value in the configuration.
+    /// If they are inconsistent, it may cause conversion failure. When conversion fails, `None` will be returned.
     pub fn get<V: DeserializeOwned>(key: &str) -> Option<V> {
         match CONFIGS.get() {
             None => {
@@ -341,18 +347,19 @@ impl AppConfig {
         }
     }
 
-    /// 添加配置监听器
+    /// Add configuration listener
     ///
-    /// - `config_id`: 配置ID
-    /// - `handler`: 配置监听函数，参数为变更后、已合并并展平后的配置内容
+    /// - `config_id`: Configuration ID
+    /// - `handler`: Configuration listener function, parameter is the changed, merged and flattened configuration content
     pub fn add_listener(config_id: &str, handler: fn(&HashMap<String, serde_yaml::Value>)) {
         Configs::add_listener(config_id, handler);
     }
 }
 
+/// Service Discovery
 pub struct AppDiscovery;
 impl AppDiscovery {
-    /// 获取指定服务的可用的服务实例
+    /// Get available service instances for the specified service
     pub async fn get_instances(service_id: &str) -> anyhow::Result<Vec<Instance>> {
         match DISCOVERY.get() {
             Some(discovery) => {

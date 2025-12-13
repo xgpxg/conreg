@@ -1,33 +1,34 @@
+/// Configuration component
 use crate::utils;
 use derive_builder::Builder;
 use serde::Deserialize;
 use serde_yaml::Value;
 use std::collections::HashMap;
 
-/// 配置/注册中心的整体配置
-/// 包一层是因为适配bootstrap.yaml中顶层的key为conreg
+/// Overall configuration for config/registry center
+/// Wrapped because the top-level key in bootstrap.yaml is conreg
 #[derive(Debug, Clone, Deserialize)]
 pub(crate) struct ConRegConfigWrapper {
     pub(crate) conreg: ConRegConfig,
 }
 
-/// 配置/注册中心配置
+/// Config/Registry Center Configuration
 #[derive(Debug, Clone, Deserialize, Builder)]
 #[serde(rename_all = "kebab-case")]
 pub struct ConRegConfig {
-    /// 服务ID
+    /// Service ID
     #[allow(unused)]
     #[serde(default = "ConRegConfig::default_service_id")]
     #[builder(setter(into), default = "ConRegConfig::default_service_id()")]
     pub service_id: String,
-    /// 客户端配置
+    /// Client configuration
     #[builder(default = "ClientConfig::default()")]
     pub client: ClientConfig,
-    /// 配置中心配置项
+    /// Configuration center configuration
     #[serde(default)]
     #[builder(setter(strip_option), default)]
     pub config: Option<ConfigConfig>,
-    /// 注册中心配置项
+    /// Registry center configuration
     #[serde(default)]
     #[builder(setter(strip_option), default)]
     pub discovery: Option<DiscoveryConfig>,
@@ -103,20 +104,20 @@ impl ClientConfig {
 #[derive(Debug, Clone, Deserialize, Default, Builder)]
 #[serde(rename_all = "kebab-case")]
 pub struct ConfigConfig {
-    /// 配置中心地址
+    /// Configuration center address
     #[builder(setter(into))]
     pub server_addr: ServerAddr,
-    /// 命名空间，默认为：public
+    /// Namespace, default: public
     #[serde(default = "ConfigConfig::default_namespace")]
     #[builder(setter(into), default = "ConfigConfig::default_namespace()")]
     pub namespace: String,
-    /// 配置ID，如：`["application.yaml"]`
+    /// Configuration IDs, e.g.: `["application.yaml"]`
     #[serde(default)]
     pub config_ids: Vec<String>,
 }
 
 impl ConfigConfig {
-    /// 默认命名空间
+    /// Default namespace
     fn default_namespace() -> String {
         "public".to_string()
     }
@@ -125,21 +126,21 @@ impl ConfigConfig {
 #[derive(Debug, Clone, Deserialize, Default, Builder)]
 #[serde(rename_all = "kebab-case")]
 pub struct DiscoveryConfig {
-    /// 配置中心地址，如：127.0.0.1:8000
+    /// Configuration center address, e.g.: 127.0.0.1:8000
     #[builder(setter(into))]
     pub server_addr: ServerAddr,
-    /// 命名空间，默认为：public
+    /// Namespace, default: public
     #[serde(default = "DiscoveryConfig::default_namespace")]
     #[builder(setter(into), default = "DiscoveryConfig::default_namespace()")]
     pub namespace: String,
     #[serde(default = "HashMap::default")]
     #[builder(setter(into), default = "HashMap::default()")]
-    /// 元数据
+    /// Metadata
     pub meta: HashMap<String, Value>,
 }
 
 impl DiscoveryConfig {
-    /// 默认命名空间
+    /// Default namespace
     fn default_namespace() -> String {
         "public".to_string()
     }
@@ -147,13 +148,13 @@ impl DiscoveryConfig {
 
 #[derive(Debug, Clone, Deserialize, Default)]
 pub enum LoadBalanceStrategy {
-    /// 轮询
+    /// Round Robin
     #[default]
     RoundRobin,
-    /// 加权轮询
+    /// Weighted Round Robin
     Weighted,
-    /// 随机
+    /// Random
     Random,
-    /// 加权随机
+    /// Weighted Random
     WeightedRandom,
 }

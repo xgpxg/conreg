@@ -5,7 +5,7 @@ use std::collections::HashMap;
 pub(crate) mod request;
 pub(crate) mod response;
 
-/// 服务示例
+/// Service Instance
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Instance {
     /// 实例ID，由conreg自动生成
