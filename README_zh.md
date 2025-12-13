@@ -1,10 +1,14 @@
-# Conreg
-
-[中文](README_zh.md) | [English](README.md)
+<div align="center">
+  <img src="docs/logo.png" style="width:150px" alt="Conreg Logo">
 
 ![Release](https://github.com/xgpxg/conreg/actions/workflows/publish.yml/badge.svg)
 ![GitHub release](https://img.shields.io/github/v/release/xgpxg/conreg?label=Version)
 ![Crates.io](https://img.shields.io/crates/d/conreg-client?label=conreg-client)
+
+[中文](README_zh.md) | [English](README.md)
+</div>
+
+# 简介
 
 Conreg 是一个使用 Rust 实现的配置中心和注册中心，参考了 Nacos 的设计，简单易用，并使用 Raft 算法确保集群节点间的数据一致性。
 
@@ -44,7 +48,7 @@ Conreg 是一个使用 Rust 实现的配置中心和注册中心，参考了 Nac
 - [x] 配置获取
 - [x] 服务注册
 - [x] 服务发现
-- [ ] 负载均衡
+- [x] 负载均衡
 
 集群管理工具：
 
@@ -58,7 +62,7 @@ Conreg 是一个使用 Rust 实现的配置中心和注册中心，参考了 Nac
 Web UI：
 
 - [x] 基础界面
-- 嵌入与集成
+- [ ] 嵌入与集成
 
 # 使用方法
 
@@ -102,7 +106,8 @@ curl -X POST http://127.0.0.1:8001/api/cluster/init -d [[1,"127.0.0.1:8001"],[2,
 
 您可以使用代理组件（例如 Nginx）来代理集群节点，以便通过浏览器访问后端页面，或者您也可以直接访问集群中的任意节点。
 
-对于集群管理（如初始化、扩容、缩容、监控等），我们提供了一个命令行工具用于集群管理：[conreg-cmt](https://crates.io/crates/conreg-cmt)，可以方便地使用：
+对于集群管理（如初始化、扩容、缩容、监控等），我们提供了一个命令行工具用于集群管理：[conreg-cmt](https://crates.io/crates/conreg-cmt)
+，可以方便地使用：
 
 ```shell
 用法: conreg-cmt --server <SERVER> <COMMAND>
@@ -140,13 +145,13 @@ conreg-client 是 Conreg 的客户端 SDK，用于集成到您的 Rust 应用程
 
 使用单机模式测试了 100 万次请求。
 
-| 操作                  | 性能   | 备注           |
-|---------------------|--------|---------------|
-| 配置写入              | 1.3k/s | -             |
-| 配置读取              | 11k/s  | 未启用缓存      |
-| 配置读取              | 52k/s  | 启用缓存       |
-| 服务实例注册           | 1.1k/s | -             |
-| 服务实例查询           | 55k/s  | -             |
-| 服务实例心跳           | 1.4k/s | -             |
+| 操作     | 性能     | 备注    |
+|--------|--------|-------|
+| 配置写入   | 1.3k/s | -     |
+| 配置读取   | 11k/s  | 未启用缓存 |
+| 配置读取   | 52k/s  | 启用缓存  |
+| 服务实例注册 | 1.1k/s | -     |
+| 服务实例查询 | 55k/s  | -     |
+| 服务实例心跳 | 1.4k/s | -     |
 
 内存稳定使用量为 55.7M

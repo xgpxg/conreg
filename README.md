@@ -1,10 +1,14 @@
-# Conreg
-
-[中文](README_zh.md) | [English](README.md)
+<div align="center">
+  <img src="docs/logo.png" style="width:150px" alt="Conreg Logo">
 
 ![Release](https://github.com/xgpxg/conreg/actions/workflows/publish.yml/badge.svg)
 ![GitHub release](https://img.shields.io/github/v/release/xgpxg/conreg?label=Version)
 ![Crates.io](https://img.shields.io/crates/d/conreg-client?label=conreg-client)
+
+[中文](README_zh.md) | [English](README.md)
+</div>
+
+# Introduction
 
 Configuration and registry center implemented in Rust, referencing the design of Nacos, simple and easy to use, using
 Raft to ensure data consistency across cluster nodes.
@@ -45,7 +49,7 @@ Client SDK（[conreg-client](https://docs.rs/conreg-client)）：
 - [x] Configuration retrieval
 - [x] Service registration
 - [x] Service discovery
-- [ ] Load balancing
+- [x] Load balancing
 
 Cluster Management Tool:
 
@@ -59,7 +63,7 @@ Cluster Management Tool:
 Web UI:
 
 - [x] Basic UI
-- Embedding and Integration
+- [ ] Embedding and Integration
 
 # How to use
 

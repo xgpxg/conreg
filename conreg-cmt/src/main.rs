@@ -83,7 +83,8 @@ async fn main() -> anyhow::Result<()> {
             remove_node(&args.server, *node_id).await?;
         }
         Commands::Status => {
-            get_status(&args.server).await?;
+            let status = get_status(&args.server).await?;
+            print_status(&status);
         }
         Commands::Monitor { interval } => {
             monitor_cluster(&args.server, *interval).await?;
