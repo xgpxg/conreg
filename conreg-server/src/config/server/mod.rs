@@ -36,8 +36,8 @@ pub struct ConfigEntry {
 
 impl ConfigEntry {
     /// 计算配置内容的MD5
-    pub fn gen_md5(content: &str) -> String {
-        let digest = md5::compute(content);
+    pub fn gen_md5(content: &str, description: &Option<String>) -> String {
+        let digest = md5::compute(format!("{}{:?}", content, description));
         format!("{:x}", digest)
     }
 }
@@ -121,7 +121,7 @@ impl ConfigManager {
         // 旧配置
         let config = self.get_config(namespace_id, config_id).await?;
         // 新配置的MD5
-        let md5 = ConfigEntry::gen_md5(content);
+        let md5 = ConfigEntry::gen_md5(content, &description);
         // 配置内容未改变，不处理
         if config.is_some() && config.as_ref().unwrap().md5 == md5 {
             log::info!("config content not change");
