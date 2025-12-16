@@ -31,7 +31,7 @@ Configuration Center:
 - [x] Consistency synchronization (Raft)
 - [x] Configuration history records
 - [x] Configuration recovery
-- [ ] Configuration import/export
+- [x] Configuration import/export
 
 Registry Center:
 
