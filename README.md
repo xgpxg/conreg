@@ -14,6 +14,8 @@
 Configuration and registry center implemented in Rust, referencing the design of Nacos, simple and easy to use, using
 Raft to ensure data consistency across cluster nodes.
 
+If you are building distributed or microservices applications using Rust, Conreg might be a good choice.
+
 Supported platforms:
 
 - Ubuntu
@@ -133,6 +135,9 @@ Options:
 ## Conreg Client
 
 conreg-client is a client SDK for Conreg, used for integration into your Rust applications.
+
+For example, you can easily get the configuration content using `AppConfig::get('key')` without restarting the
+application.
 
 You can view the detailed documentation from [conreg-client](https://docs.rs/conreg-client)
 

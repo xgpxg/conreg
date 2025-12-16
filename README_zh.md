@@ -13,6 +13,8 @@
 
 Conreg 是一个使用 Rust 实现的配置中心和注册中心，参考了 Nacos 的设计，简单易用，并使用 Raft 算法确保集群节点间的数据一致性。
 
+如果您正在使用 Rust 构建分布式或者微服务应用，Conreg 也许是个不错的选择。
+
 支持平台：
 
 - Ubuntu
@@ -131,6 +133,8 @@ curl -X POST http://127.0.0.1:8001/api/cluster/init -d [[1,"127.0.0.1:8001"],[2,
 ## Conreg 客户端
 
 conreg-client 是 Conreg 的客户端 SDK，用于集成到您的 Rust 应用程序中。
+
+例如，可以使用`AppConfig::get('key')`来轻松获取配置内容，并且不需要重启应用。
 
 您可以从 [conreg-client](https://docs.rs/conreg-client) 查看详细文档
 
