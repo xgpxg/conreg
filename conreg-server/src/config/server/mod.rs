@@ -515,7 +515,7 @@ impl ConfigManager {
             self.upsert_config_and_sync(
                 namespace_id,
                 id,
-                &String::from_utf8_lossy(&content).to_string(),
+                &String::from_utf8_lossy(&content),
                 description.map(|s| s.to_string()),
                 format,
             )
