@@ -2,6 +2,8 @@ use crate::app::get_app;
 use crate::auth::UserPrincipal;
 use crate::config::server::ConfigEntry;
 use crate::protocol::res::{PageRes, Res};
+use rocket::form::Form;
+use rocket::fs::TempFile;
 use rocket::serde::json::Json;
 use serde::{Deserialize, Serialize};
 use tracing::log;
@@ -15,7 +17,8 @@ pub fn routes() -> Vec<rocket::Route> {
         list,
         list_history,
         watch,
-        export
+        export,
+        import
     ]
 }
 
@@ -47,6 +50,13 @@ struct ExportConfigReq {
     namespace_id: String,
     ids: Vec<String>,
     is_all: bool,
+}
+
+#[derive(Debug, FromForm)]
+struct ImportConfigReq<'a> {
+    namespace_id: String,
+    file: TempFile<'a>,
+    is_overwrite: bool,
 }
 /// 创建或更新配置
 ///
@@ -212,5 +222,20 @@ async fn export(
             log::error!("export config error: {}", e);
             Err(rocket::http::Status::InternalServerError)
         }
+    }
+}
+
+/// 导入配置
+#[post("/import", data = "<req>")]
+async fn import(req: Form<ImportConfigReq<'_>>, _user: UserPrincipal) -> Res<()> {
+    let req = req.into_inner();
+    match get_app()
+        .config_app
+        .manager
+        .import(&req.namespace_id, req.file, req.is_overwrite)
+        .await
+    {
+        Ok(_) => Res::success(()),
+        Err(e) => Res::error(&e.to_string()),
     }
 }

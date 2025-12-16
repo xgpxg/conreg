@@ -3,13 +3,15 @@ use crate::db::DbPool;
 use crate::protocol::id;
 use crate::raft::RaftRequest;
 use crate::raft::api::raft_write;
-use anyhow::bail;
+use anyhow::{Context, bail};
 use chrono::{DateTime, Local};
 use dashmap::DashMap;
+use indexmap::IndexMap;
+use rocket::fs::TempFile;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::fmt::Debug;
-use std::io::Write;
+use std::io::{Cursor, Write};
 use tracing::log;
 
 pub mod api;
@@ -435,15 +437,21 @@ impl ConfigManager {
             list
         };
 
+        // 元数据
+        // yaml格式：
+        // metadata:
+        // - id: xxx
+        //   format: xxx
+        //   description: xxx
         let mut metadata = Vec::new();
         let mut buffer = Vec::new();
-        let mut zip = zip::ZipWriter::new(std::io::Cursor::new(&mut buffer));
+        let mut zip = zip::ZipWriter::new(Cursor::new(&mut buffer));
 
         for item in list.into_iter() {
             zip.start_file(&item.id, zip::write::FileOptions::<()>::default())?;
             zip.write_all(item.content.as_bytes())?;
 
-            metadata.push(indexmap::IndexMap::from([
+            metadata.push(IndexMap::from([
                 ("id", item.id),
                 ("format", item.format),
                 ("description", item.description.unwrap_or_default()),
@@ -458,6 +466,63 @@ impl ConfigManager {
         let bytes = zip.finish()?;
 
         Ok(bytes.into_inner().to_owned())
+    }
+
+    pub(crate) async fn import<'a>(
+        &self,
+        namespace_id: &String,
+        file: TempFile<'a>,
+        is_overwrite: bool,
+    ) -> anyhow::Result<()> {
+        let mut stream = file.open().await?;
+
+        let mut buffer = Vec::new();
+        tokio::io::copy(&mut stream, &mut buffer).await?;
+
+        let mut zip = zip::ZipArchive::new(Cursor::new(buffer))?;
+
+        // 读取元数据文件内容
+        let mf_content = {
+            let mut mf = zip.by_name(".metadata.yaml")?;
+            let mut buf = Vec::new();
+            std::io::copy(&mut mf, &mut buf)?;
+            buf
+        };
+        let metadata: IndexMap<String, Vec<IndexMap<String, String>>> =
+            serde_yaml::from_slice(&mf_content)?;
+
+        let mut items = metadata.get("metadata").context("no metadata")?.clone();
+        items.reverse();
+
+        for item in items {
+            let id = item.get("id").unwrap();
+
+            if self.get_config(namespace_id, id).await?.is_some() && !is_overwrite {
+                log::info!("config {} already exists in {}, skip", id, namespace_id);
+                continue;
+            }
+
+            let format = item.get("format").context("no format")?;
+            let description = item.get("description");
+
+            let mut file = zip.by_name(id)?;
+
+            let mut content = Vec::new();
+            std::io::copy(&mut file, &mut content)?;
+
+            log::info!("importing config {} to {}", id, namespace_id);
+
+            self.upsert_config_and_sync(
+                namespace_id,
+                id,
+                &String::from_utf8_lossy(&content).to_string(),
+                description.map(|s| s.to_string()),
+                format,
+            )
+            .await?;
+        }
+
+        Ok(())
     }
 }
 
