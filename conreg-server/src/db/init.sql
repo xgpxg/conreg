@@ -50,7 +50,7 @@ create table if not exists user
 );
 
 insert or ignore into namespace (id, name, description, create_time, update_time)
-values ('public', 'public', '保留空间', current_timestamp, current_timestamp);
+values ('public', 'public', 'Reserved namespace', current_timestamp, current_timestamp);
 
 insert or ignore into user (username, password)
 values ('conreg', '$2b$12$d/WgXewqZpbUBOGgyGjzw.1XSO2OMHiDVJ9jaZ94vfuXsprG6Rcuu');

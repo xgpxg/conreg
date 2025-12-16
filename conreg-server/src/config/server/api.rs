@@ -7,7 +7,16 @@ use serde::{Deserialize, Serialize};
 use tracing::log;
 
 pub fn routes() -> Vec<rocket::Route> {
-    routes![upsert, get, delete, recover, list, list_history, watch]
+    routes![
+        upsert,
+        get,
+        delete,
+        recover,
+        list,
+        list_history,
+        watch,
+        export
+    ]
 }
 
 /// 创建或更新配置
@@ -33,6 +42,12 @@ struct RecoverConfigReq {
     id_: i64,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct ExportConfigReq {
+    namespace_id: String,
+    ids: Vec<String>,
+    is_all: bool,
+}
 /// 创建或更新配置
 ///
 /// 该接口仅在后台调用
@@ -172,4 +187,30 @@ async fn watch(namespace_id: &str) -> Res<Option<String>> {
     })
     .await;
     res.unwrap_or_else(|_| Res::success(None))
+}
+
+/// 导出配置
+///
+/// 支持导出命名空间下选中的配置或者全部配置
+#[post("/export", data = "<req>")]
+async fn export(
+    req: Json<ExportConfigReq>,
+    _user: UserPrincipal,
+) -> Result<Vec<u8>, rocket::http::Status> {
+    let req = req.into_inner();
+    let namespace_id = req.namespace_id;
+    let ids = req.ids;
+    let is_all = req.is_all;
+    match get_app()
+        .config_app
+        .manager
+        .export(&namespace_id, ids, is_all)
+        .await
+    {
+        Ok(res) => Ok(res),
+        Err(e) => {
+            log::error!("export config error: {}", e);
+            Err(rocket::http::Status::InternalServerError)
+        }
+    }
 }

@@ -7,7 +7,9 @@ use anyhow::bail;
 use chrono::{DateTime, Local};
 use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use std::fmt::Debug;
+use std::io::Write;
 use tracing::log;
 
 pub mod api;
@@ -411,6 +413,51 @@ impl ConfigManager {
             .await?;
 
         Ok((total, rows))
+    }
+
+    pub(crate) async fn export(
+        &self,
+        namespace_id: &str,
+        ids: Vec<String>,
+        is_all: bool,
+    ) -> anyhow::Result<Vec<u8>> {
+        let list = if is_all {
+            self.list_configs_with_page(namespace_id, 1, 10000, None)
+                .await?
+                .1
+        } else {
+            let mut list = Vec::new();
+            for id in ids {
+                if let Some(c) = self.get_config(namespace_id, &id).await? {
+                    list.push(c);
+                }
+            }
+            list
+        };
+
+        let mut metadata = Vec::new();
+        let mut buffer = Vec::new();
+        let mut zip = zip::ZipWriter::new(std::io::Cursor::new(&mut buffer));
+
+        for item in list.into_iter() {
+            zip.start_file(&item.id, zip::write::FileOptions::<()>::default())?;
+            zip.write_all(item.content.as_bytes())?;
+
+            metadata.push(indexmap::IndexMap::from([
+                ("id", item.id),
+                ("format", item.format),
+                ("description", item.description.unwrap_or_default()),
+            ]));
+        }
+
+        let metadata = BTreeMap::from([("metadata", metadata)]);
+
+        zip.start_file(".metadata.yaml", zip::write::FileOptions::<()>::default())?;
+        zip.write_all(serde_yaml::to_string(&metadata)?.as_bytes())?;
+
+        let bytes = zip.finish()?;
+
+        Ok(bytes.into_inner().to_owned())
     }
 }
 
