@@ -1,6 +1,6 @@
 [package]
 name = "conreg-cmt"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 description = "conreg-cmt is a management tool provided for conreg clusters, used for cluster creation, scaling up, and scaling down."
 license = "Apache-2.0"
