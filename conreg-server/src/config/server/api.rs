@@ -201,7 +201,9 @@ async fn watch(namespace_id: &str) -> Res<Option<String>> {
 
 /// 导出配置
 ///
-/// 支持导出命名空间下选中的配置或者全部配置
+/// 支持导出命名空间下选中的配置或者全部配置。
+///
+/// 该接口仅在后台调用
 #[post("/export", data = "<req>")]
 async fn export(
     req: Json<ExportConfigReq>,
@@ -226,6 +228,12 @@ async fn export(
 }
 
 /// 导入配置
+///
+/// 目前行为：
+/// - 支持同名配置覆盖导入或跳过
+/// - 当导入发生异常时，自动终止后续导入，已导入的 不会 回滚
+///
+/// 该接口仅在后台调用
 #[post("/import", data = "<req>")]
 async fn import(req: Form<ImportConfigReq<'_>>, _user: UserPrincipal) -> Res<()> {
     let req = req.into_inner();

@@ -275,7 +275,7 @@ impl ConfigManager {
         log::info!("append history: {:?}", entry);
         // 保存历史
         sqlx::query(
-            "INSERT INTO config_history (id_, namespace_id, id, content, description, create_time, update_time, md5) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO config_history (id_, namespace_id, id, content, description, create_time, update_time, md5, format) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
             // 注意这个ID，不能自增或随机生成，需要从entry中计算而来，以保证多节点下的数据的一致性
             .bind(entry.id_ + entry.update_time.timestamp_millis())
@@ -286,6 +286,7 @@ impl ConfigManager {
             .bind(entry.create_time)
             .bind(entry.update_time)
             .bind(&entry.md5)
+            .bind(&entry.format)
             .execute(DbPool::get())
             .await?;
 
