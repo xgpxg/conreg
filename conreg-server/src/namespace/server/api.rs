@@ -14,6 +14,8 @@ struct UpsertConfigReq {
     id: String,
     name: String,
     description: Option<String>,
+    is_auth: bool,
+    auth_token: Option<String>,
 }
 #[derive(Debug, Serialize, Deserialize)]
 struct DeleteConfigReq {
@@ -26,7 +28,13 @@ async fn upsert(req: Json<UpsertConfigReq>, _user: UserPrincipal) -> Res<()> {
     match get_app()
         .namespace_app
         .manager
-        .upsert_namespace_and_sync(&req.id, &req.name, req.description.clone())
+        .upsert_namespace_and_sync(
+            &req.id,
+            &req.name,
+            req.description.clone(),
+            req.is_auth,
+            req.auth_token.clone(),
+        )
         .await
     {
         Ok(_) => Res::success(()),

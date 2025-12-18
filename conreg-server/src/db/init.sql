@@ -29,6 +29,8 @@ create table if not exists namespace
     id          varchar(100) primary key,
     name        varchar(100) not null,
     description varchar(500),
+    is_auth     boolean      not null default false,
+    auth_token  varchar(100),
     create_time timestamp    not null,
     update_time timestamp    not null
 );

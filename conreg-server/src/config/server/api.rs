@@ -1,5 +1,5 @@
 use crate::app::get_app;
-use crate::auth::UserPrincipal;
+use crate::auth::{NamespaceAuth, UserPrincipal};
 use crate::config::server::ConfigEntry;
 use crate::protocol::res::{PageRes, Res};
 use rocket::form::Form;
@@ -82,7 +82,7 @@ async fn upsert(req: Json<UpsertConfigReq>, _user: UserPrincipal) -> Res<()> {
 
 /// 获取配置
 #[get("/get?<namespace_id>&<id>")]
-async fn get(namespace_id: &str, id: &str) -> Res<Option<ConfigEntry>> {
+async fn get(namespace_id: &str, id: &str, _auth: NamespaceAuth) -> Res<Option<ConfigEntry>> {
     match get_app()
         .config_app
         .manager
