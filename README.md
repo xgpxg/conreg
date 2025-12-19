@@ -38,13 +38,12 @@ Registry Center:
 - [x] Namespace isolation
 - [x] Service registration
 - [x] Heartbeat detection
-- [ ] Service discovery
 - [x] Instance metadata
 
 Security:
 
 - [x] Login verification
-- [ ] OpenAPI authentication
+- [x] OpenAPI authentication
 - [ ] Configuration content encryption
 
 Client SDK（[conreg-client](https://docs.rs/conreg-client)）：
