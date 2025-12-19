@@ -27,7 +27,8 @@
 //!     # Configuration ID
 //!     # If there are duplicate configuration keys in multiple configurations, the latter configuration will overwrite the previous one
 //!     config-ids:
-//!     - test.yaml
+//!       - test.yaml
+//!     auth-token: your_token
 //!   # Registry configuration
 //!   discovery:
 //!     # Registry address
@@ -35,6 +36,7 @@
 //!       - 127.0.0.1:8000
 //!       - 127.0.0.1:8001
 //!       - 127.0.0.1:8002
+//!     auth-token: your_token
 //! ```
 //!
 //! Then, initialize in the `main` function:
@@ -212,8 +214,10 @@ struct Conreg;
 
 /// Store configuration content
 static CONFIGS: OnceLock<Arc<RwLock<Configs>>> = OnceLock::new();
-/// 服务发现全局实例
+/// Global instance for service discovery
 static DISCOVERY: OnceLock<Discovery> = OnceLock::new();
+/// Request header for namespace authentication
+const NS_TOKEN_HEADER: &str = "X-NS-Token";
 
 impl Conreg {
     /// Initialize configuration center and registry center
@@ -392,6 +396,7 @@ mod tests {
                         .server_addr("127.0.0.1:8000")
                         .namespace("public")
                         .config_ids(vec!["test.yaml".into()])
+                        .auth_token(Some("2cTtsBUpor".to_string()))
                         .build()
                         .unwrap(),
                 )

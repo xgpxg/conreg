@@ -31,7 +31,13 @@ impl ConfigClient {
         let mut contents = vec![];
         for id in self.config.config_ids.iter() {
             contents.push(
-                Self::fetch_config(&self.config.server_addr, &self.config.namespace, id).await?,
+                Self::fetch_config(
+                    &self.config.server_addr,
+                    &self.config.namespace,
+                    id,
+                    &self.config.auth_token,
+                )
+                .await?,
             );
         }
 
@@ -45,10 +51,16 @@ impl ConfigClient {
     }
 
     /// 从配置中心加载指定配置ID的配置内容
+    ///
+    /// - server_addr: 配置中心地址
+    /// - namespace: 命名空间
+    /// - config_id: 配置ID
+    /// - auth_token: 鉴权token
     async fn fetch_config(
         server_addr: &ServerAddr,
         namespace: &str,
         config_id: &str,
+        auth_token: &Option<String>,
     ) -> anyhow::Result<String> {
         let url = server_addr.build_url("/api/config/get")?;
         let query = GetConfigReq {
@@ -56,7 +68,16 @@ impl ConfigClient {
             id: config_id.to_string(),
         };
 
-        let result = HTTP.get::<HashMap<String, Value>>(&url, query).await?;
+        let result = HTTP
+            .get::<HashMap<String, Value>>(
+                &url,
+                query,
+                match auth_token {
+                    Some(token) => Some(vec![(crate::NS_TOKEN_HEADER, token.as_str())]),
+                    None => None,
+                },
+            )
+            .await?;
 
         let content = result
             .get("content")
@@ -93,7 +114,7 @@ impl ConfigClient {
             };
 
             loop {
-                match HTTP.get::<Option<String>>(&url, &query).await {
+                match HTTP.get::<Option<String>>(&url, &query, None).await {
                     Ok(changed_config_id) => {
                         if changed_config_id.is_none() {
                             log::info!("config no changed");
@@ -107,6 +128,7 @@ impl ConfigClient {
                                     &config_clone.server_addr,
                                     &config_clone.namespace,
                                     id,
+                                    &config_clone.auth_token,
                                 )
                                 .await
                                 .unwrap(),
@@ -155,8 +177,13 @@ impl ConfigClient {
                 log::debug!("starting fetch config");
                 let mut contents = vec![];
                 for id in config_clone.config_ids.iter() {
-                    match Self::fetch_config(&config_clone.server_addr, &config_clone.namespace, id)
-                        .await
+                    match Self::fetch_config(
+                        &config_clone.server_addr,
+                        &config_clone.namespace,
+                        id,
+                        &config_clone.auth_token,
+                    )
+                    .await
                     {
                         Ok(res) => contents.push(res),
                         Err(e) => {

@@ -15,6 +15,7 @@ conreg:
     config-ids:
       - test.yaml
       - test2.yml
+    auth-token: 2cTtsBUpor
   # 注册中心
   discovery:
     # 注册中心地址

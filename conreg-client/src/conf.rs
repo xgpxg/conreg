@@ -114,6 +114,8 @@ pub struct ConfigConfig {
     /// Configuration IDs, e.g.: `["application.yaml"]`
     #[serde(default)]
     pub config_ids: Vec<String>,
+    /// Namespace authentication token
+    pub auth_token: Option<String>,
 }
 
 impl ConfigConfig {
@@ -133,10 +135,12 @@ pub struct DiscoveryConfig {
     #[serde(default = "DiscoveryConfig::default_namespace")]
     #[builder(setter(into), default = "DiscoveryConfig::default_namespace()")]
     pub namespace: String,
+    /// Metadata
     #[serde(default = "HashMap::default")]
     #[builder(setter(into), default = "HashMap::default()")]
-    /// Metadata
     pub meta: HashMap<String, Value>,
+    /// Namespace authentication token
+    pub auth_token: Option<String>,
 }
 
 impl DiscoveryConfig {

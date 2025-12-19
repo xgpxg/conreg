@@ -2,9 +2,11 @@ use crate::conf::ServerAddr;
 use crate::protocol::response::Res;
 use anyhow::bail;
 use reqwest::StatusCode;
+use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use std::fmt::Debug;
+use std::str::FromStr;
 use std::sync::LazyLock;
 use std::time::Duration;
 
@@ -26,9 +28,28 @@ impl Network {
         &self,
         url: &str,
         query: impl Serialize + Debug,
+        headers: Option<Vec<(&str, &str)>>,
     ) -> anyhow::Result<T> {
         log::debug!("GET {}, query: {:?}", url, query);
-        let response = self.client.get(url).query(&query).send().await?;
+        let response = self
+            .client
+            .get(url)
+            .query(&query)
+            .headers(match headers {
+                Some(headers) => headers
+                    .into_iter()
+                    .map(|(k, v)| {
+                        (
+                            // SAFE: Header name is known
+                            HeaderName::from_str(k).unwrap(),
+                            HeaderValue::from_str(v).unwrap_or(HeaderValue::from_str("").unwrap()),
+                        )
+                    })
+                    .collect::<HeaderMap<_>>(),
+                None => HeaderMap::new(),
+            })
+            .send()
+            .await?;
         if response.status() != StatusCode::OK {
             bail!("{}", response.text().await?);
         }

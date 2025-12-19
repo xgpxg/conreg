@@ -69,6 +69,10 @@ impl DiscoveryClient {
                 .server_addr
                 .build_url("/api/discovery/instance/available")?,
             req,
+            match &self.config.auth_token {
+                Some(token) => Some(vec![(crate::NS_TOKEN_HEADER, token)]),
+                None => None,
+            },
         )
         .await
     }
