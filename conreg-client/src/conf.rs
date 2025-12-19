@@ -115,6 +115,7 @@ pub struct ConfigConfig {
     #[serde(default)]
     pub config_ids: Vec<String>,
     /// Namespace authentication token
+    #[builder(setter(into), default = "Default::default()")]
     pub auth_token: Option<String>,
 }
 
@@ -140,6 +141,7 @@ pub struct DiscoveryConfig {
     #[builder(setter(into), default = "HashMap::default()")]
     pub meta: HashMap<String, Value>,
     /// Namespace authentication token
+    #[builder(setter(into), default = "Default::default()")]
     pub auth_token: Option<String>,
 }
 
