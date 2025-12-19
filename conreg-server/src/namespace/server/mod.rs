@@ -104,7 +104,7 @@ impl NamespaceManager {
             .bind(&namespace.id)
             .bind(&namespace.name)
             .bind(&namespace.description)
-            .bind(&namespace.is_auth)
+            .bind(namespace.is_auth)
             .bind(&namespace.auth_token)
             .bind(namespace.create_time)
             .bind(namespace.update_time)
@@ -118,7 +118,7 @@ impl NamespaceManager {
         sqlx::query("update namespace set name = ?, description = ?, is_auth = ?, auth_token = ?, update_time = ? where id = ?")
             .bind(&namespace.name)
             .bind(&namespace.description)
-            .bind(&namespace.is_auth)
+            .bind(namespace.is_auth)
             .bind(&namespace.auth_token)
             .bind(namespace.update_time)
             .bind(&namespace.id)
@@ -201,10 +201,8 @@ impl NamespaceManager {
         let namespace = self.get_namespace(namespace_id).await?;
         if let Some(namespace) = namespace {
             // 需要认证
-            if namespace.is_auth {
-                if namespace.auth_token.as_deref() != auth_token {
-                    return Ok(false);
-                }
+            if namespace.is_auth && namespace.auth_token.as_deref() != auth_token {
+                return Ok(false);
             }
         }
         Ok(true)
