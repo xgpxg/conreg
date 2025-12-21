@@ -16,11 +16,16 @@ Raft to ensure data consistency across cluster nodes.
 
 If you are building distributed or microservices applications using Rust, Conreg might be a good choice.
 
-Supported platforms:
+Supported OS:
 
 - Ubuntu
 - CentOS
 - Other common Linux distributions (we compile with `musl`, theoretically supporting all major Linux distributions)
+
+Supported architectures:
+
+- x86_64
+- arm64
 
 # Features
 
