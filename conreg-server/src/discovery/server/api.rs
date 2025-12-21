@@ -16,10 +16,13 @@ pub fn routes() -> Vec<rocket::Route> {
         deregister_instance,
         list_instances,
         available,
-        heartbeat
+        heartbeat,
+        offline_instance,
+        online_instance,
     ]
 }
 
+/// 注册一个服务
 #[derive(Debug, Serialize, Deserialize)]
 struct RegisterServiceReq {
     namespace_id: String,
@@ -27,12 +30,14 @@ struct RegisterServiceReq {
     meta: HashMap<String, String>,
 }
 
+/// 注销一个服务
 #[derive(Debug, Serialize, Deserialize)]
 struct DeregisterServiceReq {
     namespace_id: String,
     service_id: String,
 }
 
+/// 注册一个服务实例
 #[derive(Debug, Serialize, Deserialize)]
 struct RegisterServiceInstanceReq {
     namespace_id: String,
@@ -47,6 +52,7 @@ impl From<RegisterServiceInstanceReq> for ServiceInstance {
     }
 }
 
+/// 注销一个服务实例
 #[derive(Debug, Serialize, Deserialize)]
 struct DeregisterServiceInstanceReq {
     namespace_id: String,
@@ -54,8 +60,16 @@ struct DeregisterServiceInstanceReq {
     instance_id: String,
 }
 
+/// 心跳请求
 #[derive(Debug, Serialize, Deserialize)]
 struct HeartbeatReq {
+    namespace_id: String,
+    service_id: String,
+    instance_id: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct OnlineOrOfflineServiceInstanceReq {
     namespace_id: String,
     service_id: String,
     instance_id: String,
@@ -186,6 +200,33 @@ async fn heartbeat(req: Json<HeartbeatReq>) -> Res<HeartbeatResult> {
         .await
     {
         Ok(result) => Res::success(result),
+        Err(e) => Res::error(&e.to_string()),
+    }
+}
+
+
+#[post("/instance/offline", data = "<req>")]
+async fn offline_instance(req: Json<OnlineOrOfflineServiceInstanceReq>) -> Res<()> {
+    match get_app()
+        .discovery_app
+        .manager
+        .offline(&req.0.namespace_id, &req.0.service_id, &req.0.instance_id)
+        .await
+    {
+        Ok(res) => Res::success(res),
+        Err(e) => Res::error(&e.to_string()),
+    }
+}
+
+#[post("/instance/online", data = "<req>")]
+async fn online_instance(req: Json<OnlineOrOfflineServiceInstanceReq>) -> Res<()> {
+    match get_app()
+        .discovery_app
+        .manager
+        .online(&req.0.namespace_id, &req.0.service_id, &req.0.instance_id)
+        .await
+    {
+        Ok(res) => Res::success(res),
         Err(e) => Res::error(&e.to_string()),
     }
 }

@@ -225,7 +225,7 @@ impl RaftStateMachine<TypeConfig> for StateMachineStore {
         let mut res = Vec::with_capacity(entries_iter.size_hint().0);
 
         for entry in entries_iter {
-            log::info!("apply entry: {:?}", entry);
+            log::debug!("apply entry: {:?}", entry);
             res.push(self.apply_entry(entry).await?);
         }
         Ok(res)

@@ -151,16 +151,3 @@ impl DiscoveryConfig {
         "public".to_string()
     }
 }
-
-#[derive(Debug, Clone, Deserialize, Default)]
-pub enum LoadBalanceStrategy {
-    /// Round Robin
-    #[default]
-    RoundRobin,
-    /// Weighted Round Robin
-    Weighted,
-    /// Random
-    Random,
-    /// Weighted Random
-    WeightedRandom,
-}

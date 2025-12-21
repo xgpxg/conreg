@@ -66,6 +66,8 @@ pub enum HeartbeatResult {
     Ok,
     /// 找不到实例，需要重新注册服务实例
     NoInstanceFound,
+    /// 心跳请求被拒绝，当由控制台下线服务实例时处于此状态
+    Rejected,
 }
 
 impl ServiceInstance {
@@ -178,14 +180,28 @@ impl Discovery {
 
     /// 上线一个服务实例（仅通过手动触发）
     #[allow(unused)]
-    pub fn online(&self, service_instance_id: String) -> anyhow::Result<()> {
-        unimplemented!()
+    pub fn online(&self, service_id: &str, instance_id: &str) -> anyhow::Result<()> {
+        if let Some(mut service) = self.services.get_mut(service_id)
+            && let Some(instance) = service.iter_mut().find(|instance| {
+                instance.id == instance_id && instance.status == InstanceStatus::Offline
+            })
+        {
+            instance.status = InstanceStatus::Ready;
+        }
+        Ok(())
     }
 
     /// 下线一个服务实例（仅通过手动触发）
     #[allow(unused)]
-    pub fn offline(&self, service_instance_id: String) -> anyhow::Result<()> {
-        unimplemented!()
+    pub fn offline(&self, service_id: &str, instance_id: &str) -> anyhow::Result<()> {
+        if let Some(mut service) = self.services.get_mut(service_id)
+            && let Some(instance) = service
+                .iter_mut()
+                .find(|instance| instance.id == instance_id)
+        {
+            instance.status = InstanceStatus::Offline;
+        }
+        Ok(())
     }
 
     /// 按服务ID获取服务实例
@@ -224,6 +240,10 @@ impl Discovery {
         if let Some(mut services) = self.services.get_mut(service_id) {
             for instance in services.iter_mut() {
                 if instance.id == instance_id {
+                    // 手动下线的实例不允许再次通过心跳恢复状态
+                    if instance.status == InstanceStatus::Offline {
+                        return Ok(HeartbeatResult::Rejected);
+                    }
                     instance.update_heartbeat();
                     instance.status = InstanceStatus::Up;
                     return Ok(HeartbeatResult::Ok);
@@ -248,6 +268,10 @@ impl Discovery {
                 interval_timer.tick().await;
                 services.iter_mut().for_each(|mut service| {
                     service.iter_mut().for_each(|instance| {
+                        // 手动下线的无须处理
+                        if instance.status == InstanceStatus::Offline {
+                            return;
+                        }
                         // 超过3个心跳周期超时的，状态更新为Down
                         if instance.lost_heartbeats >= 3 {
                             instance.status = InstanceStatus::Down;

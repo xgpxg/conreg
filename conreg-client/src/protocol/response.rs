@@ -14,6 +14,8 @@ pub(crate) enum HeartbeatResult {
     Ok,
     /// 找不到实例，需要重新注册服务实例
     NoInstanceFound,
+    /// 心跳请求被拒绝，当由控制台下线服务实例时处于此状态
+    Rejected,
     /// 未知结果，可能出现在客户端和服务端版本不兼容时
     #[default]
     Unknown,

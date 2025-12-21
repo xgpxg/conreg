@@ -174,6 +174,9 @@ impl Discovery {
                                 log::error!("register error:{}", e);
                             }
                         }
+                        HeartbeatResult::Rejected => {
+                            log::warn!("heartbeat rejected");
+                        }
                         // 未知结果，可能客户端和服务端版本不匹配
                         HeartbeatResult::Unknown => {
                             log::error!("Unknown heartbeat result");

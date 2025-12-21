@@ -385,4 +385,15 @@ impl DiscoveryManager {
         let hr = discovery.heartbeat(service_id, instance_id)?;
         Ok(hr)
     }
+
+    pub async fn offline(&self, namespace_id: &str, service_id: &str, instance_id: &str)-> anyhow::Result<()> {
+        let discovery = self.try_get_discovery(namespace_id).await?;
+        discovery.offline(service_id, instance_id)?;
+        Ok(())
+    }
+    pub async fn online(&self, namespace_id: &str, service_id: &str, instance_id: &str)-> anyhow::Result<()> {
+        let discovery = self.try_get_discovery(namespace_id).await?;
+        discovery.online(service_id, instance_id)?;
+        Ok(())
+    }
 }
