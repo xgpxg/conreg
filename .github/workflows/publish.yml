@@ -9,7 +9,17 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, ubuntu-24.04-arm ]
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            arch_name: x86_64
+          - os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-musl
+            arch_name: arm64
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
@@ -25,7 +35,7 @@ jobs:
 
       # 添加 musl 目标
       - name: Add musl target
-        run: rustup target add x86_64-unknown-linux-musl
+        run: rustup target add ${{ matrix.target }}
 
       # 克隆前端代码
       - name: Checkout frontend code
@@ -48,13 +58,13 @@ jobs:
 
       # 构建后端服务
       - name: Build
-        run: cargo build -r --bin conreg-server --target x86_64-unknown-linux-musl
+        run: cargo build -r --bin conreg-server --target ${{ matrix.target }}
 
       # 压缩二进制文件
       - name: Compress binary
         run: |
-          cd target/x86_64-unknown-linux-musl/release
-          tar -czf conreg-server.tar.gz conreg-server
+          cd target/${{ matrix.target }}/release
+          tar -czf conreg-server-${{ matrix.arch_name }}.tar.gz conreg-server
 
       # 生成变更日志
       - name: Generate changelog
@@ -69,7 +79,7 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
-          files: target/x86_64-unknown-linux-musl/release/conreg-server.tar.gz
+          files: target/${{ matrix.target }}/release/conreg-server-${{ matrix.arch_name }}.tar.gz
           body: ${{ steps.changelog.outputs.changelog }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
