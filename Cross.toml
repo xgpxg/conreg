@@ -1,0 +1,6 @@
+# Build arm, just local
+[target.aarch64-unknown-linux-musl]
+image = "ghcr.io/cross-rs/aarch64-unknown-linux-musl:latest"
+[target.aarch64-unknown-linux-musl.env]
+passthrough = []
+
