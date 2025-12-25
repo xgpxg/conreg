@@ -80,7 +80,7 @@ Web UI:
 
 ```shell
 # Download package
-curl -L https://github.com/xgpxg/conreg/releases/latest/download/conreg-server.tar.gz | tar -zxvf - -C .
+curl -L https://github.com/xgpxg/conreg/releases/latest/download/conreg-server-x86_64.tar.gz | tar -zxvf - -C .
 
 # Start server
 conreg-server -p 8000
@@ -96,7 +96,7 @@ In production environments, cluster deployment is generally recommended. The fol
 
 ```shell
 # Download package
-curl -L https://github.com/xgpxg/conreg/releases/latest/download/conreg-server.tar.gz 
+curl -L https://github.com/xgpxg/conreg/releases/latest/download/conreg-server-x86_64.tar.gz 
 
 # Unzip package
 tar -zxvf conreg-server.tar.gz -C ./conreg1
