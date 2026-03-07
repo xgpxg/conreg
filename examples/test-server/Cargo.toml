@@ -6,3 +6,4 @@ edition = "2024"
 [dependencies]
 conreg-client = { path = "../../conreg-client" }
 tokio = { version = "1.47.1", features = ["full"] }
+rocket = "0.5.0"

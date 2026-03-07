@@ -1,10 +1,19 @@
+use std::net::IpAddr;
 use conreg_client::conf::{
     ClientConfigBuilder, ConRegConfigBuilder, ConfigConfigBuilder, DiscoveryConfigBuilder,
 };
 use conreg_client::{AppConfig, init_with};
+use rocket::{get, Config};
+use rocket::data::{ByteUnit, Limits};
+
+#[get("/test")]
+fn test() -> &'static str {
+    "Hello from test-server!"
+}
 
 #[tokio::main]
 async fn main() {
+
     let config = ConRegConfigBuilder::default()
         // 服务ID，任意名称，在同一Namespace下唯一
         .service_id("test-server")
@@ -45,7 +54,6 @@ async fn main() {
     init_with(config).await;
 
     // 从配置中心获取配置
-
     let h = tokio::spawn(async move {
         loop {
             // 获取配置
@@ -56,5 +64,15 @@ async fn main() {
             tokio::time::sleep(std::time::Duration::from_secs(1)).await;
         }
     });
-    let _ = tokio::join!(h);
+
+    // 启动 Rocket 服务器
+    rocket::build()
+        .configure(Config {
+            port: 8080,
+            ..Config::debug_default()
+        })
+        .mount("/", rocket::routes![test])
+        .launch()
+        .await
+        .unwrap();
 }

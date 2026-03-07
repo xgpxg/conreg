@@ -3,6 +3,16 @@
 version = 4
 
 [[package]]
+name = "Inflector"
+version = "0.11.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fe438c63458706e03479442743baae6c88256498e6431708f6dfc520a26515d3"
+dependencies = [
+ "lazy_static",
+ "regex",
+]
+
+[[package]]
 name = "addr2line"
 version = "0.24.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -546,6 +556,7 @@ name = "conreg-client"
 version = "0.1.7"
 dependencies = [
  "anyhow",
+ "conreg-feign-macro",
  "dashmap",
  "derive_builder",
  "fastrand",
@@ -553,6 +564,7 @@ dependencies = [
  "md5",
  "reqwest",
  "serde",
+ "serde_json",
  "serde_yaml",
  "tokio",
  "tracing",
@@ -569,6 +581,16 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+]
+
+[[package]]
+name = "conreg-feign-macro"
+version = "0.1.0"
+dependencies = [
+ "Inflector",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.106",
 ]
 
 [[package]]
@@ -2681,6 +2703,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "regex"
+version = "1.11.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "23d7fd106d8c02486a8d64e778353d1cffe08ce79ac2e82f540c86d0facf6912"
+dependencies = [
+ "aho-corasick",
+ "memchr",
+ "regex-automata",
+ "regex-syntax",
+]
+
+[[package]]
 name = "regex-automata"
 version = "0.4.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2734,6 +2768,7 @@ dependencies = [
  "rustls-platform-verifier",
  "serde",
  "serde_json",
+ "serde_urlencoded",
  "sync_wrapper",
  "tokio",
  "tokio-rustls",
@@ -3695,6 +3730,7 @@ name = "test-server"
 version = "0.1.0"
 dependencies = [
  "conreg-client",
+ "rocket",
  "tokio",
 ]
 
