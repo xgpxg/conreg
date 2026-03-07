@@ -8,7 +8,7 @@ repository = "https://github.com/xgpxg/conreg"
 documentation = "https://docs.rs/conreg-client"
 
 [dependencies]
-reqwest = { version = "0.13", features = ["json"] }
+reqwest = { version = "0.13", features = ["json", "query", "multipart"] }
 serde = { version = "1.0.219", features = ["derive"] }
 serde_yaml = "0.9.33"
 anyhow = "1"
@@ -20,6 +20,21 @@ derive_builder = "0.20.2"
 fastrand = "2.3.0"
 tracing = { version = "0.1.41", features = ["log"], optional = true }
 tracing-subscriber = { version = "0.3.20", features = ["env-filter", "chrono"], optional = true }
+conreg-feign-macro = { path = "../conreg-feign-macro", optional = true }
+
+[dev-dependencies]
+serde_json = "1.0"
+rocket = "0.5.1"
+bytes = "1.11"
 
 [features]
 logger = ["tracing", "tracing-subscriber"]
+feign = ["conreg-feign-macro"]
+
+[[example]]
+name = "client"
+path = "examples/client.rs"
+
+[[example]]
+name = "feign"
+path = "examples/feign.rs"

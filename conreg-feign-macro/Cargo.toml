@@ -1,0 +1,16 @@
+[package]
+name = "conreg-feign-macro"
+version = "0.1.0"
+edition = "2024"
+description = "Procedural macros for conreg-client Feign-like declarative HTTP client"
+license = "Apache-2.0"
+repository = "https://github.com/xgpxg/conreg"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = { version = "2.0", features = ["full", "extra-traits"] }
+quote = "1.0"
+proc-macro2 = "1.0"
+Inflector = "0.11"

@@ -4,6 +4,30 @@
 //!
 //! conreg-client is the client SDK for conreg, used to integrate into your services and communicate with conreg-server.
 //!
+//! # Features
+//!
+//! - Configuration Center: Load and manage configurations from conreg-server
+//! - Service Discovery: Register and discover service instances
+//! - Load Balancing: Multiple load balancing strategies (Random, Round-Robin, Weighted, etc.)
+//! - Declarative HTTP Client: Feign-like declarative microservice calling (requires `feign` feature)
+//!
+//! # Feign-like Declarative Client
+//!
+//! When the `feign` feature is enabled (default), you can use the declarative HTTP client:
+//!
+//! ```ignore
+//! use conreg_client::{feign_client, get, post, put, delete};
+//!
+//! #[feign_client(service_id = "DEPT-SERVICE", base_path = "/dept")]
+//! pub trait DeptClient {
+//!     #[get("/queryById/{id}")]
+//!     async fn query_by_id(&self, id: i64) -> Result<Dept, FeignError>;
+//!
+//!     #[post("/add")]
+//!     async fn add_dept(&self, dept: Dept) -> Result<bool, FeignError>;
+//! }
+//! ```
+//!
 //! # Quick Start
 //!
 //! ## Basic Usage
@@ -210,6 +234,43 @@ mod network;
 mod protocol;
 mod utils;
 
+#[cfg(feature = "feign")]
+pub use conreg_feign_macro::{delete, feign_client, get, patch, post, put};
+
+/// Feign client error types
+#[derive(Debug)]
+pub enum FeignError {
+    /// HTTP request error
+    RequestError(String),
+    /// Response deserialization error
+    DeserializationError(String),
+    /// Service instance not found
+    InstanceNotFound(String),
+    /// Load balance error
+    LoadBalanceError(String),
+}
+
+impl std::fmt::Display for FeignError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            FeignError::RequestError(msg) => write!(f, "Request error: {}", msg),
+            FeignError::DeserializationError(msg) => {
+                write!(f, "Deserialization error: {}", msg)
+            }
+            FeignError::InstanceNotFound(msg) => write!(f, "Instance not found: {}", msg),
+            FeignError::LoadBalanceError(msg) => write!(f, "Load balance error: {}", msg),
+        }
+    }
+}
+
+impl std::error::Error for FeignError {}
+
+impl From<crate::lb::LoadBalanceError> for FeignError {
+    fn from(err: crate::lb::LoadBalanceError) -> Self {
+        FeignError::LoadBalanceError(err.to_string())
+    }
+}
+
 struct Conreg;
 
 /// Store configuration content
@@ -306,7 +367,7 @@ pub async fn init_with(config: ConRegConfig) {
     match Conreg::init_with(&config).await {
         Ok(_) => {}
         Err(e) => {
-            log::error!("conreg init failed: {}", e);
+            eprintln!("conreg init failed: {}", e);
             exit(1);
         }
     };
@@ -382,8 +443,12 @@ impl AppDiscovery {
 mod tests {
     use super::*;
     use crate::conf::{ClientConfigBuilder, ConRegConfigBuilder, DiscoveryConfigBuilder};
-    use serde::Deserialize;
+    use reqwest::StatusCode;
+    use reqwest::multipart::{Form, Part};
+    use serde::{Deserialize, Serialize};
+    use serde_json::json;
     use std::collections::HashMap;
+
     #[tokio::test]
     async fn test_config() {
         //init_log();
