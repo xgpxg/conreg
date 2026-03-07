@@ -23,7 +23,7 @@
 //! // Create a load balance client
 //! let mut client = LoadBalanceClient::new();
 //!
-//! // Set the load balancing strategy for a service
+//! // Optional: Set the load balancing strategy for a service
 //! client.set_strategy("your_service_id", LoadBalanceStrategy::Random);
 //!
 //! // Make a request
