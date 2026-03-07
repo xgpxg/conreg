@@ -1,6 +1,6 @@
 [package]
 name = "conreg-server"
-version = "0.1.10"
+version = "0.1.11"
 edition = "2024"
 
 [dependencies]
@@ -22,15 +22,15 @@ md5 = "0.8"
 idgenerator = "2.0.0"
 dashmap = { version = "6.1.0", features = ["serde"] }
 rust-embed = { version = "8.7.2", features = ["interpolate-folder-path"] }
-bcrypt = "0.17"
+bcrypt = "0.19"
 moka = { version = "0.12.10", features = ["sync"] }
 uuid = { version = "1.18.1", features = ["v4"] }
-strum_macros = "0.27.1"
-zip = "6.0.0"
+strum_macros = "0.28"
+zip = "8.2"
 indexmap = "2.12"
 
-[target.x86_64-unknown-linux-musl.dependencies]
-openssl = { version = "0.10", features = ["vendored"] }
-
-[target.aarch64-unknown-linux-musl.dependencies]
-openssl = { version = "0.10", features = ["vendored"] }
+#[target.x86_64-unknown-linux-musl.dependencies]
+#openssl = { version = "0.10", features = ["vendored"] }
+#
+#[target.aarch64-unknown-linux-musl.dependencies]
+#openssl = { version = "0.10", features = ["vendored"] }
