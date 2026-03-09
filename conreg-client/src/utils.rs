@@ -1,3 +1,5 @@
+use std::sync::atomic::AtomicBool;
+
 /// 获取当前进程名称
 pub(crate) fn current_process_name() -> String {
     std::env::args()
@@ -10,8 +12,15 @@ pub(crate) fn current_process_name() -> String {
         .unwrap_or_else(|| "unknown".to_string())
 }
 
-#[cfg(feature = "logger")]
+
+#[cfg(feature = "tracing")]
+static TRACING_HAS_INIT: AtomicBool = AtomicBool::new(false);
+
+#[cfg(feature = "tracing")]
 pub(crate) fn init_log() {
+    if TRACING_HAS_INIT.load(std::sync::atomic::Ordering::Relaxed) {
+        return;
+    }
     tracing_subscriber::fmt()
         .with_writer(std::io::stderr)
         .with_env_filter(
@@ -25,4 +34,5 @@ pub(crate) fn init_log() {
         ))
         .compact()
         .init();
+    TRACING_HAS_INIT.store(true, std::sync::atomic::Ordering::Relaxed);
 }

@@ -107,24 +107,24 @@ pub fn feign_client_impl(args: TokenStream, input: TokenStream) -> TokenStream {
         #trait_def
 
         pub struct #impl_struct_name {
-            lb_client: crate::lb::LoadBalanceClient,
+            lb_client: conreg_client::lb::LoadBalanceClient,
         }
 
         impl #impl_struct_name {
-            pub fn new(lb_client: crate::lb::LoadBalanceClient) -> Self {
+            pub fn new(lb_client: conreg_client::lb::LoadBalanceClient) -> Self {
                 Self { lb_client }
             }
 
             pub fn with_timeout(timeout: std::time::Duration) -> Self {
                 Self {
-                    lb_client: crate::lb::LoadBalanceClient::new_with_connect_timeout(timeout),
+                    lb_client: conreg_client::lb::LoadBalanceClient::new_with_connect_timeout(timeout),
                 }
             }
         }
 
         impl Default for #impl_struct_name {
             fn default() -> Self {
-                Self::new(crate::lb::LoadBalanceClient::new())
+                Self::new(conreg_client::lb::LoadBalanceClient::new())
             }
         }
 
@@ -316,7 +316,7 @@ fn generate_single_method_impl(
     quote! {
         #asyncness fn #method_name(&self, #(#params),*) #output {
             use reqwest::Method;
-            
+
             // 使用路径参数和查询参数构建 URL
             let url = #url_building;
             
@@ -401,7 +401,7 @@ fn parse_header_template(header: &str) -> Option<(String, Option<String>)> {
             (header_name, Some(param_name))
         } else {
             // 静态值
-            (header_name, None)
+            (header_name, Some(value_part.to_string()))
         }
     })
 }
@@ -717,13 +717,19 @@ fn generate_request_building(
             .header_params
             .iter()
             .map(|(header_name, param_name)| {
-                let param_ident = Ident::new(param_name, proc_macro2::Span::call_site());
-                quote! {
-                    .header(#header_name, &#param_ident.to_string())
+                // 尝试将 param_name 解析为变量，如果解析失败则使用字面量
+                if let Ok(ident) = syn::parse_str::<Ident>(param_name) {
+                    quote! {
+                        .header(#header_name, #ident.to_string())
+                    }
+                } else {
+                    quote! {
+                        .header(#header_name, #param_name)
+                    }
                 }
             })
             .collect();
-
+    
         quote! {
             #(#header_setters)*
         }

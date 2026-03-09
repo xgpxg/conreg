@@ -1,15 +1,21 @@
-use std::net::IpAddr;
 use conreg_client::conf::{
     ClientConfigBuilder, ConRegConfigBuilder, ConfigConfigBuilder, DiscoveryConfigBuilder,
 };
 use conreg_client::{AppConfig, init_with};
-use rocket::{get, Config};
 use rocket::data::{ByteUnit, Limits};
+use rocket::{Config, get};
+use std::net::IpAddr;
 
-
+/// 将一个HTTP服务注册到 `Conreg Server`。
+///
+/// 这里使用 `Rocket` 框架作为示例，你可以使用任何你喜欢的框架，例如 `Actix` 等。
+///
+/// # Run example
+/// ```
+/// cargo run --example client_register -F tracing -- --nocapture
+/// ```
 #[tokio::main]
 async fn main() {
-
     let config = ConRegConfigBuilder::default()
         // 服务ID，任意名称，在同一Namespace下唯一
         .service_id("test-server")

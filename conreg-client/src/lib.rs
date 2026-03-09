@@ -225,6 +225,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::process::exit;
 use std::sync::{Arc, OnceLock, RwLock};
+use std::sync::atomic::AtomicBool;
 
 pub mod conf;
 mod config;
@@ -283,6 +284,9 @@ const NS_TOKEN_HEADER: &str = "X-NS-Token";
 impl Conreg {
     /// Initialize configuration center and registry center
     async fn init(file: Option<PathBuf>) -> anyhow::Result<()> {
+        #[cfg(feature = "tracing")]
+        utils::init_log();
+
         let mut file = file.unwrap_or("bootstrap.yaml".into());
         if !file.exists() {
             file = "bootstrap.yml".into();
@@ -312,7 +316,7 @@ impl Conreg {
     }
 
     async fn init_with(config: &ConRegConfig) -> anyhow::Result<()> {
-        #[cfg(feature = "logger")]
+        #[cfg(feature = "tracing")]
         utils::init_log();
 
         if config.config.is_some() {
@@ -367,7 +371,7 @@ pub async fn init_with(config: ConRegConfig) {
     match Conreg::init_with(&config).await {
         Ok(_) => {}
         Err(e) => {
-            eprintln!("conreg init failed: {}", e);
+            log::error!("conreg init failed: {}", e);
             exit(1);
         }
     };

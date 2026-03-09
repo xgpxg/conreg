@@ -28,13 +28,17 @@ rocket = "0.5.1"
 bytes = "1.11"
 
 [features]
-logger = ["tracing", "tracing-subscriber"]
+tracing = ["dep:tracing", "tracing-subscriber"]
 feign = ["conreg-feign-macro"]
 
 [[example]]
-name = "client"
-path = "examples/client.rs"
+name = "client_register"
+path = "examples/client_register.rs"
 
 [[example]]
-name = "feign"
-path = "examples/feign.rs"
+name = "feign_basic"
+path = "examples/feign_basic.rs"
+
+[[example]]
+name = "client_register_with_yaml"
+path = "examples/client_register_with_yaml.rs"
