@@ -5,6 +5,7 @@ edition = "2024"
 description = "Procedural macros for conreg-client Feign-like declarative HTTP client"
 license = "Apache-2.0"
 repository = "https://github.com/xgpxg/conreg"
+documentation = "https://docs.rs/conreg-feign-macro"
 
 [lib]
 proc-macro = true

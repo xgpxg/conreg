@@ -214,6 +214,9 @@
 //! println!("Config changed, new config: {:?}", config);
 //! });
 //! ```
+//!
+//! # Feign-like Component
+//! [conreg-feign-macro](https://docs.rs/conreg-feign-macro) provides a macro that implements functionality similar to Java's Feign, enabling remote procedure calls across microservices.
 
 use crate::conf::{ConRegConfig, ConRegConfigWrapper};
 use crate::config::Configs;
