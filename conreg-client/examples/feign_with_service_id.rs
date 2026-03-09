@@ -14,28 +14,14 @@ use std::path::Path;
 trait ExampleClient {
     /// Request `GET` and return string.
     #[get("/hello")]
-    async fn ip(&self) -> Result<String, FeignError>;
+    async fn hello(&self) -> Result<String, FeignError>;
 }
 
 #[tokio::main]
 async fn main() {
     let client = ExampleClientImpl::default();
 
-    let response = client.ip().await.unwrap();
-    println!("ip -> {:?}", response);
+    let response = client.hello().await.unwrap();
+    println!("hello -> {:?}", response);
 
-    let response = client.json().await.unwrap();
-    println!("json -> {:#?}", response);
-
-    let response = client.image().await.unwrap();
-    let path = Path::new("image.png");
-    std::fs::write(&path, response).unwrap();
-    println!("image saved -> {:?}", path.canonicalize().unwrap());
-
-    let form = Form::new().text("custname", "Hello, this is form form!");
-    let response = client.form(form).await.unwrap();
-    println!("form -> {:?}", response);
-
-    let response = client.headers("Hello, this is headers!").await.unwrap();
-    println!("headers -> {:?}", response);
 }

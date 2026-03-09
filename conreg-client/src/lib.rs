@@ -225,7 +225,6 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::process::exit;
 use std::sync::{Arc, OnceLock, RwLock};
-use std::sync::atomic::AtomicBool;
 
 pub mod conf;
 mod config;
