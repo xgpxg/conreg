@@ -1,8 +1,5 @@
 use conreg_client::FeignError;
-use conreg_feign_macro::{feign_client, get, post};
-use reqwest::multipart::Form;
-use rocket::http::hyper::body::Bytes;
-use std::path::Path;
+use conreg_feign_macro::{feign_client, get};
 /// This example show you how to use `feign_client`
 ///
 /// When adding `#[feign_client]` on a trait, an implementation named `<trait_name>Impl` is automatically generated.
@@ -19,9 +16,9 @@ trait ExampleClient {
 
 #[tokio::main]
 async fn main() {
+    conreg_client::init_from_file("./conreg-client/examples/bootstrap.yaml").await;
     let client = ExampleClientImpl::default();
 
     let response = client.hello().await.unwrap();
     println!("hello -> {:?}", response);
-
 }

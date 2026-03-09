@@ -20,6 +20,11 @@ trait ExampleClient {
     #[get(path = "/json")]
     async fn json(&self) -> Result<serde_json::Value, FeignError>;
 
+
+    /// Post a raw body
+    #[post(path = "/post", body = "{data}")]
+    async fn body(&self, data: Vec<u8>) -> Result<String, FeignError>;
+
     /// Request `GET` and return bytes.
     #[get(path = "/image", headers("Accept=image/png"))]
     async fn image(&self) -> Result<Bytes, FeignError>;

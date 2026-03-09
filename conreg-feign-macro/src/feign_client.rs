@@ -440,31 +440,6 @@ fn analyze_parameters(method: &TraitItemFn, path: &str) -> ParamAnalysis {
                 }
             }
         }
-
-        // 解析文档注释（回退方案或来自宏生成的文档）
-        /*if let Meta::NameValue(meta) = &attr.meta {
-            if let Expr::Lit(expr_lit) = &meta.value {
-                if let Lit::Str(lit_str) = &expr_lit.lit {
-                    let doc_value = lit_str.value();
-                    if doc_value.starts_with("HTTP_QUERY:") {
-                        let template = &doc_value[11..];
-                        query_template_params = extract_params_from_template(template);
-                    } else if doc_value.starts_with("HTTP_FORM:") {
-                        let template = &doc_value[10..];
-                        form_template_params = extract_params_from_template(template);
-                    } else if doc_value.starts_with("HTTP_BODY:") {
-                        let template = &doc_value[9..];
-                        body_template = Some(template.to_string());
-                    } else if doc_value.starts_with("HTTP_JSON:") {
-                        let template = &doc_value[9..];
-                        json_template = Some(template.to_string());
-                    } else if doc_value.starts_with("HTTP_HEADER:") {
-                        let header = &doc_value[12..];
-                        header_templates.push(header.to_string());
-                    }
-                }
-            }
-        }*/
     }
 
     // 收集所有 header 参数名称，以便将它们从其他分类中排除
@@ -711,7 +686,7 @@ fn generate_request_building(
     // 对 body attribute 使用 .body()（原始字符串 body）
     let body_quote = if let Some((body_param_name, _)) = &analysis.body_param {
         quote! {
-                .body(#body_param_name.to_string())
+                .body(#body_param_name)
 
             }
     } else {

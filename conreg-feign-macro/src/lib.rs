@@ -55,7 +55,7 @@ mod feign_client;
 /// Example: `#[post(path = "/api/post", json = "{data}")]`
 ///
 /// ## Header Parameter
-/// Use `headers("Key: Value", ...)` or `headers("Key: {param}", ...)` to specify request headers, supporting both static values and dynamic parameters.
+/// Use `headers("Key=Value", ...)` or `headers("Key={param}", ...)` to specify request headers, supporting both static values and dynamic parameters.
 ///
 /// Example: `#[get(path = "/api/users", headers("Authorization: Bearer {token}", "Accept: application/json"))]`
 #[proc_macro_attribute]
