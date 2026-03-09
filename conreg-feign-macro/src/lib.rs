@@ -58,8 +58,6 @@ mod feign_client;
 /// Use `headers("Key: Value", ...)` or `headers("Key: {param}", ...)` to specify request headers, supporting both static values and dynamic parameters.
 ///
 /// Example: `#[get(path = "/api/users", headers("Authorization: Bearer {token}", "Accept: application/json"))]`
-///
-
 #[proc_macro_attribute]
 pub fn feign_client(args: TokenStream, input: TokenStream) -> TokenStream {
     feign_client::feign_client_impl(args, input)

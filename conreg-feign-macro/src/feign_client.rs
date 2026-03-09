@@ -181,73 +181,50 @@ fn generate_method_impls(
 /// * `None` - 未找到 HTTP 方法属性
 fn extract_http_method_and_path(method: &TraitItemFn) -> Option<(String, String)> {
     for attr in &method.attrs {
-        if let Some(ident) = attr.path().get_ident() {
-            match ident.to_string().as_str() {
-                http_method @ ("get" | "post" | "put" | "delete" | "patch") => {
-                    // 尝试解析属性参数
-                    let args_result = attr.parse_args_with(
-                        Punctuated::<Meta, Token![,]>::parse_terminated
-                    );
+        if let Some(ident) = attr.path().get_ident()
+            && let http_method @ ("get" | "post" | "put" | "delete" | "patch") = ident.to_string().as_str() {
+            // 尝试解析属性参数
+            let args_result = attr.parse_args_with(
+                Punctuated::<Meta, Token![,]>::parse_terminated
+            );
 
-                    match args_result {
-                        // 空参数：#[get()]
-                        Ok(args) if args.is_empty() => {
-                            return Some((http_method.to_uppercase(), String::new()));
-                        }
-                        // 无括号：#[get]
-                        Err(_) if attr.meta.require_list().is_err() => {
-                            return Some((http_method.to_uppercase(), String::new()));
-                        }
-                        // 有参数，继续下面的解析
-                        Ok(_) => {}
-                        // 解析错误，尝试简单的字符串字面量解析
-                        Err(_) => {}
-                    }
-
-                    // 尝试解析为简单字符串字面量：#[get("/path")]
-                    if let Ok(lit_str) = attr.parse_args::<LitStr>() {
-                        return Some((http_method.to_uppercase(), lit_str.value()));
-                    }
-
-                    // 尝试解析为命名参数：#[get(path="/path", query="...", ...)]
-                    return args_result.ok().and_then(|args| {
-                        let mut path_value: Option<String> = None;
-
-                        for meta in args {
-                            if let Meta::NameValue(name_value) = meta {
-                                if name_value.path.is_ident("path") {
-                                    if let Expr::Lit(expr_lit) = &name_value.value {
-                                        if let Lit::Str(lit_str) = &expr_lit.lit {
-                                            path_value = Some(lit_str.value());
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        // 如果未指定 path，返回空路径
-                        Some((http_method.to_uppercase(), path_value.unwrap_or_default()))
-                    });
+            match args_result {
+                // 空参数：#[get()]
+                Ok(args) if args.is_empty() => {
+                    return Some((http_method.to_uppercase(), String::new()));
                 }
-                /*// 回退方案：解析文档注释格式 "HTTP_METHOD:path"
-                "doc" => {
-                    if let Meta::NameValue(meta) = &attr.meta {
-                        if let Expr::Lit(expr_lit) = &meta.value {
-                            if let Lit::Str(lit_str) = &expr_lit.lit {
-                                let doc_value = lit_str.value();
-                                // 解析格式为 "HTTP_METHOD:path" 的文档注释
-                                if let Some(colon_pos) = doc_value.find(':') {
-                                    let http_method = doc_value[..colon_pos].to_string();
-                                    let path = doc_value[colon_pos + 1..].to_string();
-                                    return Some((http_method, path));
-                                }
-                            }
-                        }
-                    }
-                }*/
-                _ => {}
+                // 无括号：#[get]
+                Err(_) if attr.meta.require_list().is_err() => {
+                    return Some((http_method.to_uppercase(), String::new()));
+                }
+                // 有参数，继续下面的解析
+                Ok(_) => {}
+                // 解析错误，尝试简单的字符串字面量解析
+                Err(_) => {}
             }
+
+            // 尝试解析为简单字符串字面量：#[get("/path")]
+            if let Ok(lit_str) = attr.parse_args::<LitStr>() {
+                return Some((http_method.to_uppercase(), lit_str.value()));
+            }
+
+            // 尝试解析为命名参数：#[get(path="/path", query="...", ...)]
+            return args_result.ok().map(|args| {
+                let mut path_value: Option<String> = None;
+
+                for meta in args {
+                    if let Meta::NameValue(name_value) = meta
+                        && name_value.path.is_ident("path")
+                        && let Expr::Lit(expr_lit) = &name_value.value
+                        && let Lit::Str(lit_str) = &expr_lit.lit {
+                        path_value = Some(lit_str.value());
+                        break;
+                    }
+                }
+
+                // 如果未指定 path，返回空路径
+                (http_method.to_uppercase(), path_value.unwrap_or_default())
+            });
         }
     }
     None
@@ -432,37 +409,34 @@ fn analyze_parameters(method: &TraitItemFn, path: &str) -> ParamAnalysis {
 
     for attr in &method.attrs {
         // 解析 HTTP 方法属性：#[get(path="...", query="...", ...)]
-        if let Some(ident) = attr.path().get_ident() {
-            if matches!(ident.to_string().as_str(), "get" | "post" | "put" | "delete" | "patch") {
-                if let Ok(args) = attr.parse_args_with(
-                    Punctuated::<Meta, Token![,]>::parse_terminated
-                ) {
-                    for meta in args {
-                        match meta {
-                            Meta::NameValue(ref name_value) => {
-                                extract_param_from_meta(
-                                    name_value,
-                                    &mut query_template_params,
-                                    &mut form_template_params,
-                                    &mut header_templates,
-                                    &mut body_template,
-                                    &mut json_template,
-                                );
+        if let Some(ident) = attr.path().get_ident()
+            && matches!(ident.to_string().as_str(), "get" | "post" | "put" | "delete" | "patch")
+            && let Ok(args) = attr.parse_args_with(
+            Punctuated::<Meta, Token![,]>::parse_terminated
+        ) {
+            for meta in args {
+                match meta {
+                    Meta::NameValue(ref name_value) => {
+                        extract_param_from_meta(
+                            name_value,
+                            &mut query_template_params,
+                            &mut form_template_params,
+                            &mut header_templates,
+                            &mut body_template,
+                            &mut json_template,
+                        );
+                    }
+                    Meta::List(ref meta_list) => {
+                        if meta_list.path.is_ident("headers")
+                            && let Ok(nested) = meta_list.parse_args_with(
+                            Punctuated::<LitStr, Token![,]>::parse_terminated
+                        ) {
+                            for lit_str in nested {
+                                header_templates.push(lit_str.value());
                             }
-                            Meta::List(ref meta_list) => {
-                                if meta_list.path.is_ident("headers") {
-                                    if let Ok(nested) = meta_list.parse_args_with(
-                                        Punctuated::<LitStr, Token![,]>::parse_terminated
-                                    ) {
-                                        for lit_str in nested {
-                                            header_templates.push(lit_str.value());
-                                        }
-                                    }
-                                }
-                            }
-                            _ => {}
                         }
                     }
+                    _ => {}
                 }
             }
         }
@@ -501,50 +475,48 @@ fn analyze_parameters(method: &TraitItemFn, path: &str) -> ParamAnalysis {
 
     // 根据模板和路径对方法参数进行分类
     for input in &method.sig.inputs {
-        if let FnArg::Typed(pat_type) = input {
-            if let Pat::Ident(pat_ident) = &*pat_type.pat {
-                let param_name = pat_ident.ident.to_string();
-                let param_type = &pat_type.ty;
+        if let FnArg::Typed(pat_type) = input
+            && let Pat::Ident(pat_ident) = &*pat_type.pat {
+            let param_name = pat_ident.ident.to_string();
+            let param_type = &pat_type.ty;
 
-                // 如果是 header 参数则跳过（单独处理）
-                if header_param_names.contains(&param_name) {
-                    continue;
-                }
-
-                let param_tuple = (pat_ident.ident.clone(), *param_type.clone());
-
-                // 检查这是否是 multipart form 参数（按类型）
-                if is_multipart_form_type(param_type) {
-                    analysis.has_multipart_form = true;
-                    analysis.form_params.push(param_tuple);
-                } else if path.contains(&format!("{{{}}}", param_name)) {
-                    // 路径参数：替换 URL 中的 {param_name}
-                    analysis.path_params.push(param_tuple);
-                } else if query_template_params.contains(&param_name) {
-                    // 查询参数：作为 ?name=value 附加
-                    analysis.query_params.push(param_tuple);
-                } else if let Some(ref body_template) = body_template && body_template.contains(&param_name) {
-                    // Body 参数：原始字符串 body
-                    analysis.body_param = Some(param_tuple);
-                } else if let Some(ref json_template) = json_template && json_template.contains(&param_name) {
-                    // JSON 参数：序列化并通过 .json() 发送
-                    analysis.json_param = Some(param_tuple);
-                } else if form_template_params.contains(&param_name) {
-                    // Form 参数：作为表单数据发送
-                    analysis.form_params.push(param_tuple);
-                }
-                // 注意：不匹配任何模板的参数当前被忽略
-                // 如果需要，可以将其改为默认查询参数
+            // 如果是 header 参数则跳过（单独处理）
+            if header_param_names.contains(&param_name) {
+                continue;
             }
+
+            let param_tuple = (pat_ident.ident.clone(), *param_type.clone());
+
+            // 检查这是否是 multipart form 参数（按类型）
+            if is_multipart_form_type(param_type) {
+                analysis.has_multipart_form = true;
+                analysis.form_params.push(param_tuple);
+            } else if path.contains(&format!("{{{}}}", param_name)) {
+                // 路径参数：替换 URL 中的 {param_name}
+                analysis.path_params.push(param_tuple);
+            } else if query_template_params.contains(&param_name) {
+                // 查询参数：作为 ?name=value 附加
+                analysis.query_params.push(param_tuple);
+            } else if let Some(ref body_template) = body_template && body_template.contains(&param_name) {
+                // Body 参数：原始字符串 body
+                analysis.body_param = Some(param_tuple);
+            } else if let Some(ref json_template) = json_template && json_template.contains(&param_name) {
+                // JSON 参数：序列化并通过 .json() 发送
+                analysis.json_param = Some(param_tuple);
+            } else if form_template_params.contains(&param_name) {
+                // Form 参数：作为表单数据发送
+                analysis.form_params.push(param_tuple);
+            }
+            // 注意：不匹配任何模板的参数当前被忽略
+            // 如果需要，可以将其改为默认查询参数
         }
     }
 
     // 解析 header 参数并与方法参数关联
     for header_template in &header_templates {
-        if let Some((header_name, param_name)) = parse_header_template(header_template) {
-            if let Some(param) = param_name {
-                analysis.header_params.push((header_name, param));
-            }
+        if let Some((header_name, param_name)) = parse_header_template(header_template)
+            && let Some(param) = param_name {
+            analysis.header_params.push((header_name, param));
         }
     }
 
@@ -563,20 +535,19 @@ fn extract_param_from_meta(
     body_template: &mut Option<String>,
     json_template: &mut Option<String>,
 ) {
-    if let Expr::Lit(expr_lit) = &name_value.value {
-        if let Lit::Str(lit_str) = &expr_lit.lit {
-            let template = lit_str.value();
-            if name_value.path.is_ident("query") {
-                *query_params = extract_params_from_template(&template);
-            } else if name_value.path.is_ident("form") {
-                *form_params = extract_params_from_template(&template);
-            } else if name_value.path.is_ident("body") {
-                *body_template = Some(template);
-            } else if name_value.path.is_ident("json") {
-                *json_template = Some(template);
-            } else if name_value.path.is_ident("headers") {
-                header_templates.push(template);
-            }
+    if let Expr::Lit(expr_lit) = &name_value.value
+        && let Lit::Str(lit_str) = &expr_lit.lit {
+        let template = lit_str.value();
+        if name_value.path.is_ident("query") {
+            *query_params = extract_params_from_template(&template);
+        } else if name_value.path.is_ident("form") {
+            *form_params = extract_params_from_template(&template);
+        } else if name_value.path.is_ident("body") {
+            *body_template = Some(template);
+        } else if name_value.path.is_ident("json") {
+            *json_template = Some(template);
+        } else if name_value.path.is_ident("headers") {
+            header_templates.push(template);
         }
     }
 }
@@ -612,7 +583,7 @@ fn is_multipart_form_type(ty: &Type) -> bool {
 /// 如果类型是 Option<T> 则返回 `true`
 fn is_option_type(ty: &Type) -> bool {
     matches!(ty, Type::Path(type_path) if 
-        type_path.path.segments.last().map_or(false, |seg| seg.ident == "Option"))
+        type_path.path.segments.last().is_some_and(|seg| seg.ident == "Option"))
 }
 
 /// 生成 URL 构建代码
@@ -729,7 +700,7 @@ fn generate_request_building(
                 }
             })
             .collect();
-    
+
         quote! {
             #(#header_setters)*
         }
@@ -799,12 +770,8 @@ fn generate_response_parsing(output: &ReturnType) -> proc_macro2::TokenStream {
                 if let Some(segment) = type_path.path.segments.last() {
                     if segment.ident == "Result" {
                         if let PathArguments::AngleBracketed(args) = &segment.arguments {
-                            if let Some(arg) = args.args.first() {
-                                if let GenericArgument::Type(inner_ty) = arg {
-                                    inner_ty
-                                } else {
-                                    return generate_json_parsing();
-                                }
+                            if let Some(GenericArgument::Type(inner_ty)) = args.args.first() {
+                                inner_ty
                             } else {
                                 return generate_json_parsing();
                             }
