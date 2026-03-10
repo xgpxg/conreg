@@ -217,6 +217,21 @@
 //!
 //! # Feign-like Component
 //! [conreg-feign-macro](https://docs.rs/conreg-feign-macro) provides a macro that implements functionality similar to Java's Feign, enabling remote procedure calls across microservices.
+//!
+//! Example:
+//! ```rust
+//! #[feign_client(service_id = "user-service", base_path = "/api")]
+//! trait UserService{
+//!   #[get("/api/users/{id}")]
+//!   async fn get_user(&self, id: i32) -> Result<String, FeignError>;
+//!
+//!   // ... other methods
+//! }
+//!
+//! // Then, you can use the generated client like this:
+//! let client = UserServiceImpl::default();
+//! let user = client.get_user(1).await?;
+//! ```
 
 use crate::conf::{ConRegConfig, ConRegConfigWrapper};
 use crate::config::Configs;

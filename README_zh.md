@@ -141,6 +141,37 @@ conreg-client 是 Conreg 的客户端 SDK，用于集成到您的 Rust 应用程
 
 您可以从 [conreg-client](https://docs.rs/conreg-client) 查看详细文档
 
+
+## Feign 风格客户端
+
+[conreg-feign-macro](https://docs.rs/conreg-feign-macro) 提供了一个宏，实现了类似 Java Feign，支持微服务间的远程过程调用。
+
+启用 `feign` 特性来开启此功能：
+
+```toml
+[dependencies]
+conreg-client = { version = "*", features = ["feign", "tracing"] }
+```
+
+示例：
+
+```rust
+#[feign_client(service_id = "user-service", base_path = "/api")]
+trait UserService {
+    #[get("/api/users/{id}")]
+    async fn get_user(&self, id: i32) -> Result<String, FeignError>;
+
+    // ... 其他方法
+}
+
+// 然后，可以像这样使用生成的接口：
+#[tokio::main]
+async fn main() {
+    let client = UserServiceImpl::default();
+    let user = client.get_user(1).await.unwrap();
+}
+```
+
 # 用户界面
 
 详情请见：[conreg-ui](https://github.com/xgpxg/conreg-ui)

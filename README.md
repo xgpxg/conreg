@@ -145,6 +145,37 @@ application.
 
 You can view the detailed documentation from [conreg-client](https://docs.rs/conreg-client)
 
+## Feign-like
+
+[conreg-feign-macro](https://docs.rs/conreg-feign-macro) provides a macro that implements functionality similar to
+Java's Feign, enabling remote procedure calls across micros
+
+enable `feign` feature to enable the macro.
+
+```toml
+[dependencies]
+conreg-client = { version = "*", features = ["feign", "tracing"] }
+```
+
+Example:
+
+```rust
+#[feign_client(service_id = "user-service", base_path = "/api")]
+trait UserService {
+    #[get("/api/users/{id}")]
+    async fn get_user(&self, id: i32) -> Result<String, FeignError>;
+
+    // ... other methods
+}
+
+// Then, you can use the generated client like this:
+#[tokio::main]
+async fn main() {
+    let client = UserServiceImpl::default();
+    let user = client.get_user(1).await?;
+}
+```
+
 # UI
 
 Look here: [conreg-ui](https://github.com/xgpxg/conreg-ui)
