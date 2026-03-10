@@ -397,6 +397,8 @@ impl AppConfig {
     ///
     /// Note: The type of the obtained value needs to be consistent with the type of the value in the configuration.
     /// If they are inconsistent, it may cause conversion failure. When conversion fails, `None` will be returned.
+    ///
+    /// This method retrieves from the flattened configuration. To retrieve the raw configuration, use `get_raw`.
     pub fn get<V: DeserializeOwned>(key: &str) -> Option<V> {
         match CONFIGS.get() {
             None => {
@@ -404,6 +406,26 @@ impl AppConfig {
                 None
             }
             Some(config) => match config.read().expect("read lock error").get(key) {
+                None => None,
+                Some(value) => match serde_yaml::from_value::<V>(value.clone()) {
+                    Ok(value) => Some(value),
+                    Err(e) => {
+                        log::error!("parse config failed, {}", e);
+                        None
+                    }
+                },
+            },
+        }
+    }
+
+    /// Get raw configuration value
+    pub fn get_raw<V: DeserializeOwned>(key: &str) -> Option<V> {
+        match CONFIGS.get() {
+            None => {
+                log::error!("config not init");
+                None
+            }
+            Some(config) => match config.read().expect("read lock error").get_raw(key) {
                 None => None,
                 Some(value) => match serde_yaml::from_value::<V>(value.clone()) {
                     Ok(value) => Some(value),
@@ -445,8 +467,8 @@ impl AppDiscovery {
 #[cfg(test)]
 #[allow(unused)]
 mod tests {
-    use super::*;
     use crate::conf::{ClientConfigBuilder, ConRegConfigBuilder, DiscoveryConfigBuilder};
+    use crate::{AppConfig, AppDiscovery, init};
     use reqwest::StatusCode;
     use reqwest::multipart::{Form, Part};
     use serde::{Deserialize, Serialize};
@@ -518,9 +540,10 @@ mod tests {
         let h = tokio::spawn(async move {
             loop {
                 println!("{:?}", AppConfig::get::<String>("name"));
-                let instances = AppDiscovery::get_instances(utils::current_process_name().as_str())
-                    .await
-                    .unwrap();
+                let instances =
+                    AppDiscovery::get_instances(crate::utils::current_process_name().as_str())
+                        .await
+                        .unwrap();
                 println!("current: {:?}", instances);
                 tokio::time::sleep(std::time::Duration::from_secs(1)).await;
             }

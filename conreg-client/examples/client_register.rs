@@ -35,7 +35,7 @@ async fn main() {
                 // 命名空间，可选，默认为 public
                 .namespace("public")
                 // 配置ID，如果有多个，后配置的会覆盖前面的同名配置项
-                .config_ids(vec!["test.yaml".into()])
+                .config_ids(vec!["test.yaml".into(),"test_json.json".into(),"test_properties.properties".into()])
                 // 命名空间的认证Token，可选
                 .auth_token(Some("token".to_string()))
                 .build()

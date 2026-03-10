@@ -5,7 +5,7 @@ use crate::{AppConfig, ConRegConfig};
 use anyhow::Context;
 use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
-use serde_yaml::{Mapping, Value, from_str};
+use serde_yaml::{Mapping, Value};
 use std::collections::HashMap;
 use std::sync::LazyLock;
 use std::time::Duration;
@@ -30,15 +30,14 @@ impl ConfigClient {
     pub(crate) async fn load(&self) -> anyhow::Result<Configs> {
         let mut contents = vec![];
         for id in self.config.config_ids.iter() {
-            contents.push(
-                Self::fetch_config(
-                    &self.config.server_addr,
-                    &self.config.namespace,
-                    id,
-                    &self.config.auth_token,
-                )
-                .await?,
-            );
+            let content = Self::fetch_config(
+                &self.config.server_addr,
+                &self.config.namespace,
+                id,
+                &self.config.auth_token,
+            )
+            .await?;
+            contents.push((id.clone(), content));
         }
 
         // 启动监听，监听配置变化
@@ -123,16 +122,15 @@ impl ConfigClient {
                         log::info!("config changed, reloading config");
                         let mut contents = vec![];
                         for id in config_clone.config_ids.iter() {
-                            contents.push(
-                                Self::fetch_config(
-                                    &config_clone.server_addr,
-                                    &config_clone.namespace,
-                                    id,
-                                    &config_clone.auth_token,
-                                )
-                                .await
-                                .unwrap(),
-                            );
+                            let content = Self::fetch_config(
+                                &config_clone.server_addr,
+                                &config_clone.namespace,
+                                id,
+                                &config_clone.auth_token,
+                            )
+                            .await
+                            .unwrap();
+                            contents.push((id.clone(), content));
                         }
                         // 新配置
                         let config = Configs::from_contents(contents).unwrap();
@@ -185,7 +183,7 @@ impl ConfigClient {
                     )
                     .await
                     {
-                        Ok(res) => contents.push(res),
+                        Ok(res) => contents.push((id.clone(), res)),
                         Err(e) => {
                             log::error!("fetch config error: {}", e);
                             tokio::time::sleep(Duration::from_millis(500)).await;
@@ -214,10 +212,10 @@ impl ConfigClient {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Configs {
-    /// 展平后的配置
-    pub configs: HashMap<String, Value>,
-    /// 配置内容，目前为yaml格式
-    pub content: Value,
+    /// 展平后的配置，以`.`分隔
+    pub flatten_config: HashMap<String, Value>,
+    /// 合并后的配置
+    pub merged_config: HashMap<String, Value>,
 }
 
 type ConfigListeners = DashMap<String, Vec<fn(&HashMap<String, Value>)>>;
@@ -231,53 +229,52 @@ static CONFIG_LISTENER: LazyLock<ConfigListener> = LazyLock::new(|| ConfigListen
 });
 
 impl Configs {
-    fn from_contents(contents: Vec<String>) -> anyhow::Result<Self> {
-        let mut merged_config = Value::Mapping(Mapping::new());
+    fn from_contents(contents: Vec<(String, String)>) -> anyhow::Result<Self> {
+        let mut builder = config::Config::builder();
 
-        // 依次解析并合并每个配置文件
-        // 后面的配置会覆盖前面相同键的配置
-        for content in contents {
-            if !content.trim().is_empty() {
-                let config_value: Value = from_str(&content)?;
-                Self::merge_yaml_values(&mut merged_config, config_value);
-            }
+        for (config_id, content) in contents {
+            let format = Self::get_format(config_id.as_str())?;
+            builder = builder.add_source(config::File::from_str(&content, format));
         }
 
-        // 配置键展开
-        let mut configs = HashMap::new();
-        Self::flatten_yaml_value(&mut configs, "", &merged_config);
+        // 合并配置
+        let merged_config = builder
+            .build()?
+            .try_deserialize::<HashMap<String, Value>>()?;
+
+        // 展平配置
+        let mut flatten_config = HashMap::new();
+        Self::flatten_yaml_value(
+            &mut flatten_config,
+            "",
+            Value::Mapping(Mapping::from_iter(
+                merged_config
+                    .clone()
+                    .into_iter()
+                    .map(|(k, v)| (k.into(), v)),
+            )),
+        );
 
         Ok(Configs {
-            configs,
-            content: merged_config,
+            flatten_config,
+            merged_config,
         })
     }
 
-    /// 递归合并两个 YAML 值
-    /// 后面的值会覆盖前面相同键的值
-    fn merge_yaml_values(target: &mut Value, source: Value) {
-        match (target, source) {
-            // 当两个值都是mapping类型时，递归合并
-            (Value::Mapping(target_map), Value::Mapping(source_map)) => {
-                for (key, value) in source_map {
-                    if target_map.contains_key(&key) {
-                        // 如果目标中已存在该key，则递归合并
-                        Self::merge_yaml_values(target_map.get_mut(&key).unwrap(), value);
-                    } else {
-                        // 如果目标中不存在该key，则直接插入
-                        target_map.insert(key, value);
-                    }
-                }
-            }
-            // 其他情况下，直接用源值覆盖目标值
-            (target, source) => {
-                *target = source;
-            }
-        }
+    fn get_format(config_id: &str) -> anyhow::Result<config::FileFormat> {
+        let format = config_id.split('.').last().expect("invalid config id");
+        let format = match format {
+            "yaml" | "yml" => config::FileFormat::Yaml,
+            "json" => config::FileFormat::Json,
+            "ini" | "properties" => config::FileFormat::Ini,
+            "toml" => config::FileFormat::Toml,
+            _ => anyhow::bail!("unsupported config format: {}", config_id),
+        };
+        Ok(format)
     }
 
     /// 展开yaml的key，通过"."分隔
-    fn flatten_yaml_value(result: &mut HashMap<String, Value>, prefix: &str, value: &Value) {
+    fn flatten_yaml_value(result: &mut HashMap<String, Value>, prefix: &str, value: Value) {
         match value {
             Value::Mapping(mapping) => {
                 for (key, val) in mapping {
@@ -304,20 +301,26 @@ impl Configs {
     }
 
     /// 获取配置项
+    ///
+    /// 示例：`get("a.b.c")`
     pub fn get(&self, key: &str) -> Option<&Value> {
-        self.configs.get(key)
+        self.flatten_config.get(key)
+    }
+
+    pub fn get_raw(&self, key: &str) -> Option<&Value> {
+        self.merged_config.get(key)
     }
 
     /// 获取所有配置项
     #[allow(unused)]
     pub fn get_all(&self) -> &HashMap<String, Value> {
-        &self.configs
+        &self.flatten_config
     }
 
     /// 检查配置是否存在
     #[allow(unused)]
     pub fn contains(&self, key: &str) -> bool {
-        self.configs.contains_key(key)
+        self.flatten_config.contains_key(key)
     }
 
     /// 添加配置监听器
@@ -338,7 +341,9 @@ mod tests {
     #[test]
     fn test_app_config() {
         let contents = vec![
-            r#"
+            (
+                "test1.yaml".to_string(),
+                r#"
             a: 1
             b: 2
             c:
@@ -350,8 +355,11 @@ mod tests {
               - 1
               - 2
             "#
-            .to_string(),
-            r#"
+                .to_string(),
+            ),
+            (
+                "test2.yaml".to_string(),
+                r#"
             a: 5
             b: 6
             c:
@@ -363,7 +371,8 @@ mod tests {
               - 1
               - 3
             "#
-            .to_string(),
+                .to_string(),
+            ),
         ];
         let config = Configs::from_contents(contents).unwrap();
         println!("{:?}", config);

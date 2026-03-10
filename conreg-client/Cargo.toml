@@ -1,6 +1,6 @@
 [package]
 name = "conreg-client"
-version = "0.2.0-beta.2"
+version = "0.2.0"
 edition = "2024"
 description = "Conreg is a distributed configuration and registration center similar to Nacos, and conreg client is conreg's client SDK"
 license = "Apache-2.0"
@@ -11,6 +11,7 @@ documentation = "https://docs.rs/conreg-client"
 reqwest = { version = "0.13", features = ["json", "query", "multipart"] }
 serde = { version = "1.0.219", features = ["derive"] }
 serde_yaml = "0.9.33"
+config = { version = "0.15", default-features = false, features = ["yaml", "json", "toml", "ini"] }
 anyhow = "1"
 tokio = { version = "1.47.1", features = ["full"] }
 log = "0.4.28"
