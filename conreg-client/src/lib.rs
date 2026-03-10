@@ -11,23 +11,6 @@
 //! - Load Balancing: Multiple load balancing strategies (Random, Round-Robin, Weighted, etc.)
 //! - Declarative HTTP Client: Feign-like declarative microservice calling (requires `feign` feature)
 //!
-//! # Feign-like Declarative Client
-//!
-//! When the `feign` feature is enabled (default), you can use the declarative HTTP client:
-//!
-//! ```ignore
-//! use conreg_client::{feign_client, get, post, put, delete};
-//!
-//! #[feign_client(service_id = "DEPT-SERVICE", base_path = "/dept")]
-//! pub trait DeptClient {
-//!     #[get("/queryById/{id}")]
-//!     async fn query_by_id(&self, id: i64) -> Result<Dept, FeignError>;
-//!
-//!     #[post("/add")]
-//!     async fn add_dept(&self, dept: Dept) -> Result<bool, FeignError>;
-//! }
-//! ```
-//!
 //! # Quick Start
 //!
 //! ## Basic Usage

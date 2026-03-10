@@ -61,9 +61,33 @@ pub enum Mode {
     Cluster,
 }
 
+impl Args {
+    pub fn validate(&self) -> anyhow::Result<()> {
+        if let Err(_) = self.address.parse::<IpAddr>() {
+            anyhow::bail!("Invalid address format");
+        }
+
+        if self.port == 0 {
+            anyhow::bail!("Port cannot be 0");
+        }
+
+        // 单机模式不支持设置NodeId
+        if matches!(self.mode, Mode::Standalone) && self.node_id != 1 {
+            anyhow::bail!("Node ID is not supported in standalone mode");
+        }
+
+        if self.node_id == 0 {
+            anyhow::bail!("Node ID must be greater than 0");
+        }
+
+        Ok(())
+    }
+}
+
 #[rocket::main]
 async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
+    args.validate()?;
 
     // 初始化日志
     init_log();

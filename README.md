@@ -34,8 +34,7 @@ Configuration Center:
 - [x] Namespace isolation
 - [x] Configuration CRUD operations
 - [x] Consistency synchronization (Raft)
-- [x] Configuration history records
-- [x] Configuration recovery
+- [x] Configuration history records and rollback
 - [x] Configuration import/export
 
 Registry Center:

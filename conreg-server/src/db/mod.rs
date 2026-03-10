@@ -11,7 +11,7 @@ impl DbPool {
     pub async fn new(args: &Args) -> anyhow::Result<DbPool> {
         let db_url = &format!("sqlite:{}/{}/{}", args.data_dir, "db", "conreg.db");
         let pool = SqlitePoolOptions::new()
-            .max_connections(5)
+            .max_connections(10)
             .connect(db_url)
             .await?;
         log::info!("connect to database: {}", db_url);
