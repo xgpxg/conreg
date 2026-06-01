@@ -48,6 +48,8 @@ Conreg 是一个使用 Rust 实现的配置中心和注册中心，参考了 Nac
 - [x] 登录验证
 - [x] OpenAPI 认证
 - [ ] 配置内容加密
+- [x] 多用户管理
+- [x] 命名空间权限控制
 
 客户端 SDK（[conreg-client](https://docs.rs/conreg-client)）：
 

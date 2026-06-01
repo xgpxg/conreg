@@ -49,6 +49,8 @@ Security:
 - [x] Login verification
 - [x] OpenAPI authentication
 - [ ] Configuration content encryption
+- [x] Multi-user management
+- [x] Namespace permission control
 
 Client SDK（[conreg-client](https://docs.rs/conreg-client)）：
 
