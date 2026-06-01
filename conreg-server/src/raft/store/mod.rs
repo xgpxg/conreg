@@ -110,7 +110,10 @@ impl StateMachineStore {
                 | RaftRequest::RegisterServiceInstance { .. }
                 | RaftRequest::DeregisterServiceInstance { .. }
                 | RaftRequest::Heartbeat { .. }
-                | RaftRequest::CacheWrite { .. }=> {
+                | RaftRequest::CacheWrite { .. }
+                | RaftRequest::CreateUser { .. }
+                | RaftRequest::DeleteUser { .. }
+                | RaftRequest::UpdateUser { .. } => {
                     match Event::RaftRequestEvent(req.clone()).send() {
                         Ok(_) => Ok(RaftResponse { value: None }),
                         Err(e) => {
@@ -218,7 +221,7 @@ impl RaftStateMachine<TypeConfig> for StateMachineStore {
     /// 目前使用持久化状态机快照的方式
     async fn apply<I>(&mut self, entries: I) -> Result<Vec<RaftResponse>, StorageError>
     where
-        I: IntoIterator<Item = Entry> + Send,
+        I: IntoIterator<Item=Entry> + Send,
     {
         // 需要处理的日志条目
         let entries_iter = entries.into_iter();

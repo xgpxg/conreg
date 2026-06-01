@@ -1,6 +1,6 @@
 use crate::app::get_app;
-use crate::cache;
 use crate::raft::RaftRequest;
+use crate::{cache, system};
 use std::sync::LazyLock;
 use std::sync::atomic::AtomicBool;
 use tokio::sync::mpsc;
@@ -216,6 +216,21 @@ impl EventHandler {
                     Err(e) => {
                         log::error!("Error processing CacheWrite request: {}", e);
                     }
+                }
+            }
+            RaftRequest::CreateUser { username, password } => {
+                if let Err(e) = system::create_user(&username, &password).await {
+                    log::error!("Error processing CreateUser request: {}", e);
+                }
+            }
+            RaftRequest::DeleteUser { username } => {
+                if let Err(e) = system::delete_user(&username).await {
+                    log::error!("Error processing DeleteUser request: {}", e);
+                }
+            }
+            RaftRequest::UpdateUser { username,password,permissions } => {
+                if let Err(e) = system::update_user(&username, password, permissions).await {
+                    log::error!("Error processing UpdateUser request: {}", e);
                 }
             }
         }

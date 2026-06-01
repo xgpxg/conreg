@@ -52,6 +52,15 @@ impl<'r> FromRequest<'r> for UserPrincipal {
     }
 }
 
+impl UserPrincipal {
+    pub const ADMIN_USERNAME: &'static str = "conreg";
+    /// 是否是管理员
+    /// 管理员用于全部权限
+    pub fn is_admin(&self) -> bool {
+        self.username == Self::ADMIN_USERNAME
+    }
+}
+
 /// Namespace访问验证
 ///
 /// 目前系统按照Namespace访问隔离，每个Namespace可单独配置访问Token，

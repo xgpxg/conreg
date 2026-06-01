@@ -63,6 +63,11 @@ impl NamespaceManager {
         Ok(namespace)
     }
 
+    pub async fn exists_namespace(&self, id: &str) -> anyhow::Result<bool> {
+        let namespace = self.get_namespace(id).await?;
+        Ok(namespace.is_some())
+    }
+
     pub async fn upsert_namespace_and_sync(
         &self,
         id: &str,
@@ -179,21 +184,73 @@ impl NamespaceManager {
         &self,
         page_num: i32,
         page_size: i32,
+        is_admin: bool,
+        permissions: Vec<String>,
     ) -> anyhow::Result<(u64, Vec<Namespace>)> {
-        let total: u64 = sqlx::query_scalar("SELECT COUNT(1) FROM namespace")
-            .fetch_one(DbPool::get())
-            .await?;
+        // 管理员，返回全部
+        if is_admin {
+            let total: u64 = sqlx::query_scalar("SELECT COUNT(1) FROM namespace")
+                .fetch_one(DbPool::get())
+                .await?;
 
-        let offset = (page_num - 1) * page_size;
+            let offset = (page_num - 1) * page_size;
 
-        let rows: Vec<Namespace> =
-            sqlx::query_as("SELECT * FROM namespace ORDER BY create_time DESC LIMIT ?, ?")
+            let rows: Vec<Namespace> =
+                sqlx::query_as("SELECT * FROM namespace ORDER BY create_time DESC LIMIT ?, ?")
+                    .bind(offset)
+                    .bind(page_size)
+                    .fetch_all(DbPool::get())
+                    .await?;
+            Ok((total, rows))
+        } else {
+            // 非管理员，仅返回有权限的
+            let allowed_ns: Vec<String> = permissions
+                .iter()
+                .filter_map(|p| {
+                    p.strip_prefix("r:ns:")
+                        .or(p.strip_prefix("w:ns:"))
+                        .or(p.strip_prefix("rw:ns:"))
+                        .map(|s| s.to_string())
+                })
+                .collect();
+
+            if allowed_ns.is_empty() {
+                return Ok((0, vec![]));
+            }
+
+            // 占位符
+            let placeholders = allowed_ns
+                .iter()
+                .map(|_| "?")
+                .collect::<Vec<_>>()
+                .join(", ");
+
+            let count_sql = format!(
+                "SELECT COUNT(1) FROM namespace WHERE id IN ({})",
+                placeholders
+            );
+            let mut count_query = sqlx::query_scalar::<_, i64>(&count_sql);
+            for ns in &allowed_ns {
+                count_query = count_query.bind(ns);
+            }
+            let total = count_query.fetch_one(DbPool::get()).await? as u64;
+
+            let offset = (page_num - 1) * page_size;
+            let query_sql = format!(
+                "SELECT * FROM namespace WHERE id IN ({}) ORDER BY create_time DESC LIMIT ?, ?",
+                placeholders
+            );
+            let mut query = sqlx::query_as(&query_sql);
+            for ns in &allowed_ns {
+                query = query.bind(ns);
+            }
+            let rows: Vec<Namespace> = query
                 .bind(offset)
                 .bind(page_size)
                 .fetch_all(DbPool::get())
                 .await?;
-
-        Ok((total, rows))
+            Ok((total, rows))
+        }
     }
 
     /// 验证请求中的Token

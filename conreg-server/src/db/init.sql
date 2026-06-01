@@ -47,12 +47,14 @@ create table if not exists service
 
 create table if not exists user
 (
-    username varchar(100) primary key,
-    password varchar(100) not null
+    username    varchar(100) primary key,
+    password    varchar(100) not null,
+    permissions text         not null,
+    create_time timestamp    not null
 );
 
 insert or ignore into namespace (id, name, description, create_time, update_time)
 values ('public', 'public', 'Reserved namespace', current_timestamp, current_timestamp);
 
-insert or ignore into user (username, password)
-values ('conreg', '$2b$12$d/WgXewqZpbUBOGgyGjzw.1XSO2OMHiDVJ9jaZ94vfuXsprG6Rcuu');
+insert or ignore into user (username, password, permissions, create_time)
+values ('conreg', '$2b$12$d/WgXewqZpbUBOGgyGjzw.1XSO2OMHiDVJ9jaZ94vfuXsprG6Rcuu', '[]', current_timestamp);

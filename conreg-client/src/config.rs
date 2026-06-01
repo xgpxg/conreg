@@ -262,7 +262,7 @@ impl Configs {
     }
 
     fn get_format(config_id: &str) -> anyhow::Result<config::FileFormat> {
-        let format = config_id.split('.').last().expect("invalid config id");
+        let format = config_id.split('.').next_back().expect("invalid config id");
         let format = match format {
             "yaml" | "yml" => config::FileFormat::Yaml,
             "json" => config::FileFormat::Json,

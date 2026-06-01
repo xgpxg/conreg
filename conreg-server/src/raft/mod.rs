@@ -61,6 +61,19 @@ pub enum RaftRequest {
         value: Value,
         ttl: Option<u64>,
     },
+    /// 创建用户
+    CreateUser {
+        username: String,
+        password: String,
+    },
+    /// 删除用户
+    DeleteUser { username: String },
+    /// 更新用户
+    UpdateUser {
+        username: String,
+        password: Option<String>,
+        permissions: Option<Vec<String>>,
+    },
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct RaftResponse {

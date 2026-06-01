@@ -63,7 +63,7 @@ pub enum Mode {
 
 impl Args {
     pub fn validate(&self) -> anyhow::Result<()> {
-        if let Err(_) = self.address.parse::<IpAddr>() {
+        if self.address.parse::<IpAddr>().is_err() {
             anyhow::bail!("Invalid address format");
         }
 

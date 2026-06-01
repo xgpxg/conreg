@@ -271,6 +271,21 @@ impl ConfigManager {
         Ok(rows)
     }
 
+    #[allow(unused)]
+    pub async fn get_history_by_id_(
+        &self,
+        id_: i64,
+    ) -> anyhow::Result<Option<ConfigEntry>> {
+        let row: Option<ConfigEntry> = sqlx::query_as(
+            "SELECT * FROM config_history WHERE id_ = ? ",
+        )
+            .bind(id_)
+            .fetch_optional(DbPool::get())
+            .await?;
+
+        Ok(row)
+    }
+
     pub async fn append_history(&self, entry: &ConfigEntry) -> anyhow::Result<()> {
         log::info!("append history: {:?}", entry);
         // 保存历史
