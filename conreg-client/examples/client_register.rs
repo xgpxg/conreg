@@ -2,13 +2,10 @@ use conreg_client::conf::{
     ClientConfigBuilder, ConRegConfigBuilder, ConfigConfigBuilder, DiscoveryConfigBuilder,
 };
 use conreg_client::{AppConfig, init_with};
-use rocket::data::{ByteUnit, Limits};
-use rocket::{Config, get};
-use std::net::IpAddr;
 
 /// 将一个HTTP服务注册到 `Conreg Server`。
 ///
-/// 这里使用 `Rocket` 框架作为示例，你可以使用任何你喜欢的框架，例如 `Actix` 等。
+/// 这里使用 `Rocket` 框架作为示例，你可以使用任何你喜欢的框架，例如 `Actix`, `Axum` 等。
 ///
 /// # Run example
 /// ```
@@ -67,19 +64,6 @@ async fn main() {
         }
     });
 
-    // 启动 Rocket 服务器
-    rocket::build()
-        .configure(Config {
-            port: 8080,
-            ..Config::debug_default()
-        })
-        .mount("/", rocket::routes![test])
-        .launch()
-        .await
-        .unwrap();
+    h.await.unwrap();
 }
 
-#[get("/hello")]
-fn test() -> &'static str {
-    "world"
-}

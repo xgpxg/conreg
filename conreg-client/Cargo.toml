@@ -43,3 +43,7 @@ path = "examples/feign_basic.rs"
 [[example]]
 name = "client_register_with_yaml"
 path = "examples/client_register_with_yaml.rs"
+
+[[example]]
+name = "test_server"
+path = "examples/test_server.rs"
